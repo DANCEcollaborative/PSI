@@ -16,15 +16,18 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Apache.NMS.ActiveMQ" Version="1.8.0"/>   
-    <PackageReference Include="./NetMqSubscriber" />
-    <PackageReference Include="./NetMqPublisher" />
-    <PackageReference Include="./CommunicationManager" />
-    <PackageReference Include="./EncodedImageSendHelper" />
-    <PackageReference Include="./ImageSendHelper" />
     <!-- <Compile Include="NetMqSubscriber.cs" />			-->
     <!-- <Compile Include="NetMqPublisher.cs" />			-->
     <!-- <Compile Include="CommunicationManager.cs" />		-->
     <!-- <Compile Include="EncodedImageSendHelper.cs" />	-->
     <!-- <Compile Include="ImageSendHelper.cs" /> 			-->
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="./NetMqSubscriber.cs" />
+    <Compile Include="./NetMqPublisher.cs" />
+    <Compile Include="./CommunicationManager.cs" />
+    <Compile Include="./EncodedImageSendHelper.cs" />
+    <!-- <Compile Include="./binImageSendHelper.cs" />		-->
+    <!-- <Compile Include="Properties\AssemblyInfo.cs" 		-->
   </ItemGroup>
 </Project>
