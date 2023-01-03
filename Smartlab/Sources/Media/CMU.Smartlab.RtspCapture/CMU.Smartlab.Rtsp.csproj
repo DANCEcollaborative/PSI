@@ -33,7 +33,7 @@
     <ProjectReference Include="..\..\..\..\Sources\Runtime\Microsoft.Psi.Interop\Microsoft.Psi.Interop.csproj" />
     <ProjectReference Include="..\..\..\..\Sources\Runtime\Microsoft.Psi.Interop\Microsoft.Psi.Media_Interop.Linux" />
   </ItemGroup>
-  <ItemGroup>
+  <!-- <ItemGroup>
     <Compile Include="./RtspCapture.cs" />
-  </ItemGroup>
+  </ItemGroup> -->
 </Project>

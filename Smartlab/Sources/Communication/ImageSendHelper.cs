@@ -1,5 +1,6 @@
 ﻿using Microsoft.Psi;
 using Microsoft.Psi.Imaging;
+// using Microsoft.Psi.Imaging.Linux;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace CMU.Smartlab.Communication
+// namespace Smartlab.Communication
+// namespace Communication
 {
     public class ImageSendHelper
     {
@@ -50,9 +53,11 @@ namespace CMU.Smartlab.Communication
             this.manager = manager;
         }
 
+        // public void SendImage(Shared<Microsoft.Psi.Imaging.Image> image, Envelope envelope)
         public void SendImage(Shared<Image> image, Envelope envelope)
         {
             Image rawData = image.Resource;
+            // Image rawData = image.UnmanagedBuffer;
             Task task = new Task(() =>
             {
                 lock (this.Lock)

@@ -9,9 +9,10 @@ namespace CMU.Smartlab.Rtsp
     using System.Threading;
     using Microsoft.Psi;
     using Microsoft.Psi.Audio;
-    // using Microsoft.Psi.Components;
+    using Microsoft.Psi.Components;
     using Microsoft.Psi.Imaging;
     using Microsoft.Psi.Media;
+    using Microsoft.Psi.Media_Interop;
     // using Microsoft.Psi.Media_Interop.Linux;
     using RtspClientSharp;
     using RtspClientSharp.RawFrames;
