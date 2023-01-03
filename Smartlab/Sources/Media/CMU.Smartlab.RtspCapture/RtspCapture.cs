@@ -20,6 +20,7 @@ namespace CMU.Smartlab.Rtsp
     using RtspClientSharp.RawFrames.Video;
 
     public class RtspCapture : IProducer<Shared<Microsoft.Psi.Imaging.Image>>, ISourceComponent, IDisposable, IMediaCapture
+    // public class RtspCapture : IProducer<Shared<Microsoft.Psi.Imaging.Image>>, ISourceComponent, IDisposable
     {
         private readonly Pipeline pipeline;
 
