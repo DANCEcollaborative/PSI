@@ -21,12 +21,10 @@
     <!-- <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" /> -->
     <PackageReference Include="System.Data.DataSetExtensions" Version="*" />
     <!-- <PackageReference Include="System.Drawing.Common" Version="5.0.0-preview.3.20214.6" /> -->
-    <PackageReference Include="System.Drawing.Common" Version="*" />
-    <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.4.355802">
+    <!-- <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.4.355802">
       <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+    </PackageReference> -->
     <PackageReference Include="Apache.NMS.ActiveMQ" Version="1.8.0" />
-    <PackageReference Include="System.Xml.Linq" Version="*" />
     <PackageReference Include="Microsoft.CSharp" Version="*" />
     <PackageReference Include="System.Net.Http" Version="*" />
     <!-- <PackageReference Include="System.Data" Version="*" /> -->
@@ -34,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Sources\Audio\Microsoft.Psi.Common" />
+    <!-- <ProjectReference Include="..\..\..\..\Sources\Audio\Microsoft.Psi.Common" /> -->
     <!-- <ProjectReference Include="..\..\..\..\Sources\Audio\Microsoft.Psi.Audio.Windows\Microsoft.Psi.Audio.Windows.csproj" /> -->
     <ProjectReference Include="..\..\..\..\Sources\Audio\Microsoft.Psi.Audio.Linux\Microsoft.Psi.Audio.Linux.csproj" />
     <ProjectReference Include="..\..\..\..\Sources\Audio\Microsoft.Psi.Audio\Microsoft.Psi.Audio.csproj" />
@@ -42,13 +40,13 @@
     <ProjectReference Include="..\..\..\..\Sources\Imaging\Microsoft.Psi.Imaging\Microsoft.Psi.Imaging.csproj" />
     <ProjectReference Include="..\..\..\..\Sources\Media\Microsoft.Psi.Media.Linux\Microsoft.Psi.Media.Linux.csproj" />
     <!-- <ProjectReference Include="..\..\..\..\Sources\Runtime\Microsoft.Psi.Interop\Microsoft.Psi.Interop.csproj" /> -->
-    <ProjectReference Include="..\..\..\..\Sources\Media\Microsoft.Psi.Media_Interop.Linux\Microsoft.Psi.Media.Linux\Microsoft.Psi.Media.Linux.csproj" />
+    <!-- <ProjectReference Include="..\..\..\..\Sources\Media\Microsoft.Psi.Media_Interop.Linux\Microsoft.Psi.Media.Linux\Microsoft.Psi.Media.Linux.csproj" /> -->
     <ProjectReference Include="..\..\..\..\Sources\Media\Microsoft.Psi.Media.Linux\Microsoft.Psi.Media.Linux.csproj" />
     <ProjectReference Include="..\..\..\..\Sources\Runtime\Microsoft.Psi\Microsoft.Psi.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="./RtspCapture.cs" />
+    <!-- <Compile Include="./RtspCapture.cs" /> -->
     <!-- <Compile Include="RtspDecoder\RawFramesDecoding\AudioConversionParameters.cs" />
     <Compile Include="RtspDecoder\RawFramesDecoding\DecodedFrames\AudioFrameFormat.cs" />
     <Compile Include="RtspDecoder\RawFramesDecoding\DecodedFrames\DecodedAudioFrame.cs" />
