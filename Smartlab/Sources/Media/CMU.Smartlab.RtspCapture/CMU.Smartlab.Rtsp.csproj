@@ -39,8 +39,7 @@
     <ProjectReference Include="..\..\..\..\Sources\Imaging\Microsoft.Psi.Imaging.Linux\Microsoft.Psi.Imaging.Linux.csproj" />
     <ProjectReference Include="..\..\..\..\Sources\Imaging\Microsoft.Psi.Imaging\Microsoft.Psi.Imaging.csproj" />
     <ProjectReference Include="..\..\..\..\Sources\Media\Microsoft.Psi.Media.Linux\Microsoft.Psi.Media.Linux.csproj" />
-    <!-- <ProjectReference Include="..\..\..\..\Sources\Runtime\Microsoft.Psi.Interop\Microsoft.Psi.Interop.csproj" /> -->
-    <!-- <ProjectReference Include="..\..\..\..\Sources\Media\Microsoft.Psi.Media_Interop.Linux\Microsoft.Psi.Media.Linux\Microsoft.Psi.Media.Linux.csproj" /> -->
+    <ProjectReference Include="..\..\..\..\Sources\Runtime\Microsoft.Psi.Interop\Microsoft.Psi.Interop.csproj" />
     <ProjectReference Include="..\..\..\..\Sources\Media\Microsoft.Psi.Media.Linux\Microsoft.Psi.Media.Linux.csproj" />
     <ProjectReference Include="..\..\..\..\Sources\Runtime\Microsoft.Psi\Microsoft.Psi.csproj" />
   </ItemGroup>

@@ -12,7 +12,7 @@ namespace CMU.Smartlab.Rtsp
     using Microsoft.Psi.Components;
     using Microsoft.Psi.Imaging;
     using Microsoft.Psi.Media;
-    // using Microsoft.Psi.Media_Interop;
+    using Microsoft.Psi.Media_Interop;
     // using Microsoft.Psi.Media_Interop.Linux;
     using RtspClientSharp;
     using RtspClientSharp.RawFrames;
