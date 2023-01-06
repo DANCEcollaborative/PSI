@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <OutputType>Library</OutputType>
@@ -24,23 +24,15 @@
     <PackageReference Include="System.Net.Http" Version="*" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Sources\Runtime\Microsoft.Psi\Microsoft.Psi.csproj" />
+    <ProjectReference Include="..\..\..\Sources\Data\Microsoft.Psi.Data\Microsoft.Psi.Data.csproj" />
+    <ProjectReference Include="..\..\..\Sources\Data\Test.Psi.Data\Test.Psi.Data.csproj" />
+    <ProjectReference Include="..\..\..\Sources\Runtime\Microsoft.Psi.Interop\Microsoft.Psi.Interop.csproj" />
     <ProjectReference Include="..\..\..\Sources\Imaging\Microsoft.Psi.Imaging\Microsoft.Psi.Imaging.csproj" />
     <ProjectReference Include="..\..\..\Sources\Imaging\Microsoft.Psi.Imaging.Linux\Microsoft.Psi.Imaging.Linux.csproj" />
-    <ProjectReference Include="..\..\..\Sources\Runtime\Microsoft.Psi\Microsoft.Psi.csproj" />
-    <ProjectReference Include="..\..\..\Sources\Runtime\Microsoft.Psi.Interop\Microsoft.Psi.Interop.csproj" />
     <ProjectReference Include="..\..\..\Sources\Devices\Microsoft.Psi.DeviceManagement\Microsoft.Psi.DeviceManagement.csproj" />
+    <ProjectReference Include="..\..\..\Sources\Common\Test.Psi.Common\Test.Psi.Common.csproj" />
+    <!-- <ProjectReference Include="..\..\..\Sources\Runtime\Test.Psi\Test.Psi.csproj" /> -->
     <ProjectReference Include="..\..\..\Sources\Media\Microsoft.Psi.Media.Linux\Microsoft.Psi.Media.Linux.csproj" />
-    <ProjectReference Include="..\..\..\Sources\Data\Test.Psi.Data\Test.Psi.Data.csproj" />
-    <ProjectReference Include="..\..\..\Sources\Data\Microsoft.Psi.Data\Microsoft.Psi.Data.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    
-    
-    
-    
-    
-    
-    
-    
   </ItemGroup>
 </Project>
