@@ -5,17 +5,19 @@
 
 using CMU.Smartlab.Communication;
 using CMU.Smartlab.Identity;
-using CMU.Smartlab.Rtsp;
+// using CMU.Smartlab.Rtsp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Net;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Kinect;
+// using Microsoft.Kinect;
 using Microsoft.Psi;
 using Microsoft.Psi.Audio;
 using Microsoft.Psi.CognitiveServices;
@@ -23,9 +25,11 @@ using Microsoft.Psi.CognitiveServices.Speech;
 using Microsoft.Psi.Imaging;
 using Microsoft.Psi.Media;
 using Microsoft.Psi.Speech;
-using Microsoft.Psi.Kinect;
+// using Microsoft.Psi.Kinect;
 using Apache.NMS;
+using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Transport.Discovery;
+
 
 namespace SigdialDemo
 {
@@ -40,16 +44,16 @@ namespace SigdialDemo
         private const string TopicToVHText = "PSI_VHT_Text";
         private const string TopicFromPython = "Python_PSI_Location";
         private const string TopicFromBazaar = "Bazaar_PSI_Text";
-        private const string TopicFromPython_QueryKinect = "Python_PSI_QueryKinect";
-        private const string TopicToPython_AnswerKinect = "PSI_Python_AnswerKinect";
+        // private const string TopicFromPython_QueryKinect = "Python_PSI_QueryKinect";
+        // private const string TopicToPython_AnswerKinect = "PSI_Python_AnswerKinect";
 
         private const int SendingImageWidth = 360;
         private const int MaxSendingFrameRate = 15;
         // private const string TcpIPSubscriber = "tcp://127.0.0.1:5555";
         // private const string TcpIPPublisher = "tcp://127.0.0.1:5556";
 
-        private const int KinectImageWidth = 1920;
-        private const int KinectImageHeight = 1080;
+        // private const int KinectImageWidth = 1920;
+        // private const int KinectImageHeight = 1080;
 
         private const double SocialDistance = 183;
         private const double DistanceWarningCooldown = 30.0;
@@ -76,10 +80,10 @@ namespace SigdialDemo
         public static List<IdentityInfo> IdInfoList;
         public static Dictionary<string, IdentityInfo> IdHead;
         public static Dictionary<string, IdentityInfo> IdTail;
-        public static SortedList<DateTime, CameraSpacePoint[]> KinectMappingBuffer;
+        // public static SortedList<DateTime, CameraSpacePoint[]> KinectMappingBuffer;
         public static List<String> AudioSourceList;
 
-        public static CameraInfo KinectInfo;
+        // public static CameraInfo KinectInfo;
         public static CameraInfo VhtInfo;
         // public static void Main(string[] args)
         // {
@@ -95,22 +99,22 @@ namespace SigdialDemo
                 while (!exit)
                 {
                     Console.WriteLine("############################################################################");
-                    Console.WriteLine("1) Multimodal streaming, Kinect. Press any key to finish streaming.");
+                    // Console.WriteLine("1) Multimodal streaming, Kinect. Press any key to finish streaming.");
                     Console.WriteLine("2) Multimodal streaming, Webcam. Press any key to finish streaming.");
-                    Console.WriteLine("3) Multimodal streaming, Lorex camera. Press any key to finish streaming.");
-                    Console.WriteLine("4) Multimodal streaming, Amcrest camera on ethernet. Press any key to finish streaming.");
-                    Console.WriteLine("5) Multimodal streaming, Amcrest camera on wifi. Press any key to finish streaming.");
-                    Console.WriteLine("6) Multimodal streaming, Foscam camera on ethernet. Press any key to finish streaming.");
-                    Console.WriteLine("7) Multimodal streaming, Foscam camera on wifi. Press any key to finish streaming.");
+                    // Console.WriteLine("3) Multimodal streaming, Lorex camera. Press any key to finish streaming.");
+                    // Console.WriteLine("4) Multimodal streaming, Amcrest camera on ethernet. Press any key to finish streaming.");
+                    // Console.WriteLine("5) Multimodal streaming, Amcrest camera on wifi. Press any key to finish streaming.");
+                    // Console.WriteLine("6) Multimodal streaming, Foscam camera on ethernet. Press any key to finish streaming.");
+                    // Console.WriteLine("7) Multimodal streaming, Foscam camera on wifi. Press any key to finish streaming.");
                     Console.WriteLine("8) Audio only. Press any key to finish streaming.");
                     Console.WriteLine("Q) Quit.");
                     ConsoleKey key = Console.ReadKey().Key;
                     Console.WriteLine();
                     switch (key)
                     {
-                        case ConsoleKey.D1:
-                            RunDemo(false, "Kinect");
-                            break;
+                        // case ConsoleKey.D1:
+                        //     RunDemo(false, "Kinect");
+                        //     break;
                         case ConsoleKey.D2:
                             RunDemo(false, "webcam");
                             break;
@@ -180,14 +184,14 @@ namespace SigdialDemo
                 return false;
             }
             IdInfoList = new List<IdentityInfo>();
-            KinectMappingBuffer = new SortedList<DateTime, CameraSpacePoint[]>();
+            // KinectMappingBuffer = new SortedList<DateTime, CameraSpacePoint[]>();
             AudioSourceList = new List<string>();
-            KinectInfo = new CameraInfo(
-                location: new Point3D(29.2, 12.7, 125.7),
-                dir_x: new Point3D(-17.27, 19.26, 1.01284),
-                dir_y: null,
-                dir_z: new Point3D(357.1, 319.2, 19.08)
-            );
+            // KinectInfo = new CameraInfo(
+            //     location: new Point3D(29.2, 12.7, 125.7),
+            //     dir_x: new Point3D(-17.27, 19.26, 1.01284),
+            //     dir_y: null,
+            //     dir_z: new Point3D(357.1, 319.2, 19.08)
+            // );
             VhtInfo = new CameraInfo(
                 location: new Point3D(-26.67, 93.98, 104.78),
                 dir_x: new Point3D(0.0, 1.0, 0.0),
@@ -200,7 +204,7 @@ namespace SigdialDemo
             manager = new CommunicationManager();
             manager.subscribe(TopicFromPython, ProcessLocation);
             manager.subscribe(TopicFromBazaar, ProcessText);
-            manager.subscribe(TopicFromPython_QueryKinect, HandleKinectQuery);
+            // manager.subscribe(TopicFromPython_QueryKinect, HandleKinectQuery);
             // netmqsubscriber = new NetMqSubscriber(TcpIPSubscriber);
             // netmqsubscriber.RegisterSubscriber(TopicFromBazaar); 
 
@@ -209,101 +213,101 @@ namespace SigdialDemo
             return true;
         }
 
-        private static void HandleKinectQuery(byte[] b)
-        {
-            string text = Encoding.ASCII.GetString(b);
-            //Console.WriteLine($"Queried for the depth information. Query: {text}");
-            string[] infos = text.Split(';');
-            long ticks = long.Parse(infos[0]);
-            // x should from left to right and y should from up to down
-            double x = double.Parse(infos[1]);
-            double y = double.Parse(infos[2]);
-            //Console.WriteLine($"Parsed: {ticks}, {x}, {y}");
-            if (KinectMappingBuffer is null || KinectMappingBuffer.Count == 0)
-            {
-                manager.SendText(TopicToPython_AnswerKinect, $"{ticks};null");
-                // Console.WriteLine($"Answering Query: {ticks};null");
-                return;
-            }
+        // private static void HandleKinectQuery(byte[] b)
+        // {
+        //     string text = Encoding.ASCII.GetString(b);
+        //     //Console.WriteLine($"Queried for the depth information. Query: {text}");
+        //     string[] infos = text.Split(';');
+        //     long ticks = long.Parse(infos[0]);
+        //     // x should from left to right and y should from up to down
+        //     double x = double.Parse(infos[1]);
+        //     double y = double.Parse(infos[2]);
+        //     //Console.WriteLine($"Parsed: {ticks}, {x}, {y}");
+        //     if (KinectMappingBuffer is null || KinectMappingBuffer.Count == 0)
+        //     {
+        //         manager.SendText(TopicToPython_AnswerKinect, $"{ticks};null");
+        //         // Console.WriteLine($"Answering Query: {ticks};null");
+        //         return;
+        //     }
 
-            // Binary search for the nearest Mapper
-            int left = 0;
-            int right = KinectMappingBuffer.Count;
-            while (right - left > 1)
-            {
-                // Console.WriteLine($"left: {left}, right: {right}");
-                int mid = (right + left) / 2;
-                if (KinectMappingBuffer.ElementAt(mid).Key.Ticks <= ticks)
-                {
-                    left = mid;
-                }
-                else
-                {
-                    right = mid;
-                }
-            }
+        //     // Binary search for the nearest Mapper
+        //     int left = 0;
+        //     int right = KinectMappingBuffer.Count;
+        //     while (right - left > 1)
+        //     {
+        //         // Console.WriteLine($"left: {left}, right: {right}");
+        //         int mid = (right + left) / 2;
+        //         if (KinectMappingBuffer.ElementAt(mid).Key.Ticks <= ticks)
+        //         {
+        //             left = mid;
+        //         }
+        //         else
+        //         {
+        //             right = mid;
+        //         }
+        //     }
 
-            long diff1 = Math.Abs(KinectMappingBuffer.ElementAt(left).Key.Ticks - ticks);
-            long diff2;
-            if (left + 1 < KinectMappingBuffer.Count)
-            {
-                diff2 = Math.Abs(KinectMappingBuffer.ElementAt(left).Key.Ticks - ticks);
-            }
-            else
-            {
-                diff2 = long.MaxValue;
-            }
+        //     long diff1 = Math.Abs(KinectMappingBuffer.ElementAt(left).Key.Ticks - ticks);
+        //     long diff2;
+        //     if (left + 1 < KinectMappingBuffer.Count)
+        //     {
+        //         diff2 = Math.Abs(KinectMappingBuffer.ElementAt(left).Key.Ticks - ticks);
+        //     }
+        //     else
+        //     {
+        //         diff2 = long.MaxValue;
+        //     }
 
-            CameraSpacePoint[] mapper;
-            if (diff1 < diff2)
-            {
-                mapper = KinectMappingBuffer.ElementAt(left).Value;
-            }
-            else
-            {
-                mapper = KinectMappingBuffer.ElementAt(left + 1).Value;
-            }
+        //     CameraSpacePoint[] mapper;
+        //     if (diff1 < diff2)
+        //     {
+        //         mapper = KinectMappingBuffer.ElementAt(left).Value;
+        //     }
+        //     else
+        //     {
+        //         mapper = KinectMappingBuffer.ElementAt(left + 1).Value;
+        //     }
 
-            // Convert to original image size:
-            int real_x = (int)(x * KinectImageWidth);
-            int real_y = (int)(y * KinectImageHeight);
-            CameraSpacePoint result = new CameraSpacePoint();
-            result.X = 0;
-            result.Y = 0;
-            result.Z = 0;
-            int valid = 0;
-            for (int i = real_x - 5; i < real_x + 6; ++i)
-            {
-                for (int j = real_y - 5; j < real_y + 6; ++j)
-                {
-                    if ((i < 0) || (j < 0) || (i > KinectImageWidth) || (j > KinectImageHeight))
-                    {
-                        continue;
-                    }
-                    CameraSpacePoint p = mapper[j * KinectImageWidth + i];
-                    if (p.X + p.Y + p.Z < -1000000 || p.X + p.Y + p.Z > 1000000)
-                    {
-                        continue;
-                    }
-                    valid++;
-                    result.X += p.X;
-                    result.Y += p.Y;
-                    result.Z += p.Z;
-                }
-            }
-            if (valid > 0)
-            {
-                Point3D to_send = new Point3D(result.X / valid, result.Y / valid, result.Z / valid) * 100;
-                to_send = KinectInfo.Cam2World(to_send);
-                manager.SendText(TopicToPython_AnswerKinect, $"{ticks};{to_send.x};{to_send.y};{to_send.z}");
-                //Console.WriteLine($"Answering Query: {ticks};{result.X / valid};{result.Y / valid};{result.Z / valid}");
-            }
-            else
-            {
-                manager.SendText(TopicToPython_AnswerKinect, $"{ticks};null");
-                // Console.WriteLine($"Answering Query: {ticks};null");
-            }
-        }
+        //     // Convert to original image size:
+        //     int real_x = (int)(x * KinectImageWidth);
+        //     int real_y = (int)(y * KinectImageHeight);
+        //     CameraSpacePoint result = new CameraSpacePoint();
+        //     result.X = 0;
+        //     result.Y = 0;
+        //     result.Z = 0;
+        //     int valid = 0;
+        //     for (int i = real_x - 5; i < real_x + 6; ++i)
+        //     {
+        //         for (int j = real_y - 5; j < real_y + 6; ++j)
+        //         {
+        //             if ((i < 0) || (j < 0) || (i > KinectImageWidth) || (j > KinectImageHeight))
+        //             {
+        //                 continue;
+        //             }
+        //             CameraSpacePoint p = mapper[j * KinectImageWidth + i];
+        //             if (p.X + p.Y + p.Z < -1000000 || p.X + p.Y + p.Z > 1000000)
+        //             {
+        //                 continue;
+        //             }
+        //             valid++;
+        //             result.X += p.X;
+        //             result.Y += p.Y;
+        //             result.Z += p.Z;
+        //         }
+        //     }
+        //     if (valid > 0)
+        //     {
+        //         Point3D to_send = new Point3D(result.X / valid, result.Y / valid, result.Z / valid) * 100;
+        //         to_send = KinectInfo.Cam2World(to_send);
+        //         manager.SendText(TopicToPython_AnswerKinect, $"{ticks};{to_send.x};{to_send.y};{to_send.z}");
+        //         //Console.WriteLine($"Answering Query: {ticks};{result.X / valid};{result.Y / valid};{result.Z / valid}");
+        //     }
+        //     else
+        //     {
+        //         manager.SendText(TopicToPython_AnswerKinect, $"{ticks};null");
+        //         // Console.WriteLine($"Answering Query: {ticks};null");
+        //     }
+        // }
 
         /*
          * Process location information received from Realmodal.
@@ -451,105 +455,108 @@ namespace SigdialDemo
                 // Send video part to Python
 
                 // var video = store.OpenStream<Shared<EncodedImage>>("Image");
-                if (!AudioOnly && cameraType == "Kinect")
-                {
-                    var kinectSensorConfig = new KinectSensorConfiguration
-                    {
-                        OutputColor = true,
-                        OutputDepth = true,
-                        OutputRGBD = true,
-                        OutputColorToCameraMapping = true,
-                        OutputBodies = false,
-                        OutputAudio = true,
-                    };
-                    var kinectSensor = new Microsoft.Psi.Kinect.KinectSensor(pipeline, kinectSensorConfig);
-                    var kinectColor = kinectSensor.ColorImage;
-                    var kinectMapping = kinectSensor.ColorToCameraMapper;
-                    var kinectAudio = kinectSensor.AudioBeamInfo.Where(result => result.Confidence > 0.7);
-                    kinectMapping.Do(AddNewMapper);
-                    kinectAudio.Do(FindAudioSource);
+                // if (!AudioOnly && cameraType == "Kinect")
+                // {
+                //     var kinectSensorConfig = new KinectSensorConfiguration
+                //     {
+                //         OutputColor = true,
+                //         OutputDepth = true,
+                //         OutputRGBD = true,
+                //         OutputColorToCameraMapping = true,
+                //         OutputBodies = false,
+                //         OutputAudio = true,
+                //     };
+                //     var kinectSensor = new Microsoft.Psi.Kinect.KinectSensor(pipeline, kinectSensorConfig);
+                //     var kinectColor = kinectSensor.ColorImage;
+                //     var kinectMapping = kinectSensor.ColorToCameraMapper;
+                //     var kinectAudio = kinectSensor.AudioBeamInfo.Where(result => result.Confidence > 0.7);
+                //     kinectMapping.Do(AddNewMapper);
+                //     kinectAudio.Do(FindAudioSource);
                    
-                    EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
-                    var scaled = kinectColor.Resize((float)Program.SendingImageWidth, (float)Program.SendingImageWidth / Program.KinectImageWidth * Program.KinectImageHeight);
-                    var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
-                    encoded.Do(helper.SendImage);
+                //     EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
+                //     var scaled = kinectColor.Resize((float)Program.SendingImageWidth, (float)Program.SendingImageWidth / Program.KinectImageWidth * Program.KinectImageHeight);
+                //     var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
+                //     encoded.Do(helper.SendImage);
                    
-                }
-                else if (!AudioOnly && cameraType == "webcam")
+                // }
+                // else if (!AudioOnly && cameraType == "webcam")
+                if (!AudioOnly && cameraType == "webcam")
                 {
-                    MediaCapture webcam = new MediaCapture(pipeline, 1280, 720, 30);
+                    // MediaCapture webcam = new MediaCapture(pipeline, 1280, 720, 30);
+                    MediaCapture webcam = new MediaCapture(pipeline, 1280, 720);
                     
                     EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
                     var scaled = webcam.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
                     var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
                     encoded.Do(helper.SendImage);                    
                 }
-                else if (!AudioOnly && cameraType == "lorex")
-                {
-                    var serverUriPSIb = new Uri("rtsp://lorex5416b1.pc.cs.cmu.edu");
-                    var credentialsPSIb = new NetworkCredential("admin", "54Lorex16");
-                    RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
+                // else if (!AudioOnly && cameraType == "lorex")
+                // {
+                //     var serverUriPSIb = new Uri("rtsp://lorex5416b1.pc.cs.cmu.edu");
+                //     var credentialsPSIb = new NetworkCredential("admin", "54Lorex16");
+                //     RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
 
-                    EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
-                    var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
-                    var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
-                    encoded.Do(helper.SendImage);
-                }
-                else if (!AudioOnly && cameraType == "amcrest_ethernet")
-                {
-                    var serverUriPSIb = new Uri("rtsp://amcrest1041a.pc.cs.cmu.edu");
-                    // var credentialsPSIb = new NetworkCredential("admin", "5416AmcrestA");
-                    var credentialsPSIb = new NetworkCredential("admin", "admin");
-                    RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
+                //     EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
+                //     var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
+                //     var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
+                //     encoded.Do(helper.SendImage);
+                // }
+                // else if (!AudioOnly && cameraType == "amcrest_ethernet")
+                // {
+                //     var serverUriPSIb = new Uri("rtsp://amcrest1041a.pc.cs.cmu.edu");
+                //     // var credentialsPSIb = new NetworkCredential("admin", "5416AmcrestA");
+                //     var credentialsPSIb = new NetworkCredential("admin", "admin");
+                //     RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
 
-                    EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
-                    var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
-                    var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
-                    encoded.Do(helper.SendImage);
-                }
-                else if (!AudioOnly && cameraType == "amcrest_wifi")
-                {
-                    var serverUriPSIb = new Uri("rtsp://amcrest1041a.wifi.local.cmu.edu");
-                    // var credentialsPSIb = new NetworkCredential("admin", "5416AmcrestA");
-                    var credentialsPSIb = new NetworkCredential("admin", "admin");
-                    RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
+                //     EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
+                //     var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
+                //     var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
+                //     encoded.Do(helper.SendImage);
+                // }
+                // else if (!AudioOnly && cameraType == "amcrest_wifi")
+                // {
+                //     var serverUriPSIb = new Uri("rtsp://amcrest1041a.wifi.local.cmu.edu");
+                //     // var credentialsPSIb = new NetworkCredential("admin", "5416AmcrestA");
+                //     var credentialsPSIb = new NetworkCredential("admin", "admin");
+                //     RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
 
-                    EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
-                    var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
-                    var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
-                    encoded.Do(helper.SendImage);
-                }
-                else if (!AudioOnly && cameraType == "foscam_ethernet")
-                {
-                    var serverUriPSIb = new Uri("rtsp://foscamr4sa.pc.cs.cmu.edu:88/videoMain");
-                    var credentialsPSIb = new NetworkCredential("admin5416", "5416FoscamA");
-                    RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
+                //     EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
+                //     var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
+                //     var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
+                //     encoded.Do(helper.SendImage);
+                // }
+                // else if (!AudioOnly && cameraType == "foscam_ethernet")
+                // {
+                //     var serverUriPSIb = new Uri("rtsp://foscamr4sa.pc.cs.cmu.edu:88/videoMain");
+                //     var credentialsPSIb = new NetworkCredential("admin5416", "5416FoscamA");
+                //     RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
 
-                    EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
-                    var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
-                    var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
-                    encoded.Do(helper.SendImage);
-                }
-                else if (!AudioOnly && cameraType == "foscam_wifi")
-                {
-                    var serverUriPSIb = new Uri("rtsp://foscamr4sa.wifi.local.cmu.edu:88/videoMain");
-                    var credentialsPSIb = new NetworkCredential("admin5416", "5416FoscamA");
-                    RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
+                //     EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
+                //     var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
+                //     var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
+                //     encoded.Do(helper.SendImage);
+                // }
+                // else if (!AudioOnly && cameraType == "foscam_wifi")
+                // {
+                //     var serverUriPSIb = new Uri("rtsp://foscamr4sa.wifi.local.cmu.edu:88/videoMain");
+                //     var credentialsPSIb = new NetworkCredential("admin5416", "5416FoscamA");
+                //     RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
 
-                    EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
-                    var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
-                    var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
-                    encoded.Do(helper.SendImage);
-                }
+                //     EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
+                //     var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
+                //     var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
+                //     encoded.Do(helper.SendImage);
+                // }
 
                 // Send audio part to Bazaar
 
                 // var audio = store.OpenStream<AudioBuffer>("Audio");
-                var audioConfig = new AudioCaptureConfiguration()
-                {
-                    OutputFormat = WaveFormat.Create16kHz1Channel16BitPcm(),
-                    DropOutOfOrderPackets = true
-                };
+                var audioConfig = new AudioCaptureConfiguration();
+                // var audioConfig = new AudioCaptureConfiguration()
+                // {
+                //     OutputFormat = WaveFormat.Create16kHz1Channel16BitPcm(),
+                //     DropOutOfOrderPackets = true
+                // };
                 IProducer<AudioBuffer> audio = new AudioCapture(pipeline, audioConfig);
 
                 var vad = new SystemVoiceActivityDetector(pipeline);
@@ -583,83 +590,83 @@ namespace SigdialDemo
             }
         }
 
-        private static void FindAudioSource(KinectAudioBeamInfo audioInfo, Envelope envelope)
-        {
-            // System.Threading.Thread.Sleep(1000);
-            AudioSourceFlag = false;
-            double angle = audioInfo.Angle;
-            Line3D soundPlane = new Line3D(
-                KinectInfo.Cam2World(new Point3D(0, 0, 0)),
-                KinectInfo.Cam2World(new Point3D(Math.Cos(angle), 0, -Math.Sin(angle))) - KinectInfo.Cam2World(new Point3D(0, 0, 0))
-            );
-            if (IdInfoList.Count > 0)
-            {
-                double nearestDis = 10000;
-                IdentityInfo nearestID = null;
-                lock (AudioSourceLock)
-                {
-                    foreach (var kv in IdTail)
-                    {
-                        var p = kv.Value;
-                        while (p.LastMatch != null)
-                        {
-                            if (p.LastMatch.Timestamp < envelope.OriginatingTime)
-                            {
-                                break;
-                            }
-                            p = p.LastMatch;
-                        }
-                        double dis = 100000;
-                        if (Math.Abs(p.Timestamp.Subtract(envelope.OriginatingTime).TotalSeconds) < 8)
-                        {
-                            double temp = Math.Abs((p.Position - soundPlane.p0) * soundPlane.t / soundPlane.t.Length());
-                            if (temp < dis)
-                            {
-                                dis = temp;
-                            }
-                        }
-                        if (p.LastMatch != null && Math.Abs(p.LastMatch.Timestamp.Subtract(envelope.OriginatingTime).TotalSeconds) < 8)
-                        {
-                            double temp = Math.Abs((p.LastMatch.Position - soundPlane.p0) * soundPlane.t / soundPlane.t.Length());
-                            if (temp < dis)
-                            {
-                                dis = temp;
-                            }
-                        }
-                        if (dis < nearestDis)
-                        {
-                            nearestID = p;
-                            nearestDis = dis;
-                        }
-                    }
-                    if (nearestID != null)
-                    {
-                        // Console.WriteLine(angle);
-                        // Console.WriteLine($"{nearestID.TrueIdentity}: {nearestDis}");
-                        AudioSourceList.Add(nearestID.TrueIdentity);
-                        if (DateTime.Now.Subtract(LastNVBGTime).TotalSeconds > NVBGCooldownAudio)
-                        {
-                            Point3D pos2send = nearestID.Position;
-                            pos2send = VhtInfo.World2Cam(pos2send);
-                            Console.WriteLine($"Send location message to NVBG: multimodal:true;%;identity:{nearestID.TrueIdentity}(Detected: {nearestID.Identity});%;location:{pos2send.x}:{pos2send.y}:{pos2send.z}");
-                            manager.SendText(TopicToNVBG, $"multimodal:true;%;identity:{nearestID.TrueIdentity};%;location:{pos2send.x}:{pos2send.y}:{pos2send.z}");
-                            LastNVBGTime = DateTime.Now;
-                        }
-                    }
-                }
-            }
-        }
+        // private static void FindAudioSource(KinectAudioBeamInfo audioInfo, Envelope envelope)
+        // {
+        //     // System.Threading.Thread.Sleep(1000);
+        //     AudioSourceFlag = false;
+        //     double angle = audioInfo.Angle;
+        //     // Line3D soundPlane = new Line3D(
+        //     //     KinectInfo.Cam2World(new Point3D(0, 0, 0)),
+        //     //     KinectInfo.Cam2World(new Point3D(Math.Cos(angle), 0, -Math.Sin(angle))) - KinectInfo.Cam2World(new Point3D(0, 0, 0))
+        //     // );
+        //     if (IdInfoList.Count > 0)
+        //     {
+        //         double nearestDis = 10000;
+        //         IdentityInfo nearestID = null;
+        //         lock (AudioSourceLock)
+        //         {
+        //             foreach (var kv in IdTail)
+        //             {
+        //                 var p = kv.Value;
+        //                 while (p.LastMatch != null)
+        //                 {
+        //                     if (p.LastMatch.Timestamp < envelope.OriginatingTime)
+        //                     {
+        //                         break;
+        //                     }
+        //                     p = p.LastMatch;
+        //                 }
+        //                 double dis = 100000;
+        //                 if (Math.Abs(p.Timestamp.Subtract(envelope.OriginatingTime).TotalSeconds) < 8)
+        //                 {
+        //                     double temp = Math.Abs((p.Position - soundPlane.p0) * soundPlane.t / soundPlane.t.Length());
+        //                     if (temp < dis)
+        //                     {
+        //                         dis = temp;
+        //                     }
+        //                 }
+        //                 if (p.LastMatch != null && Math.Abs(p.LastMatch.Timestamp.Subtract(envelope.OriginatingTime).TotalSeconds) < 8)
+        //                 {
+        //                     double temp = Math.Abs((p.LastMatch.Position - soundPlane.p0) * soundPlane.t / soundPlane.t.Length());
+        //                     if (temp < dis)
+        //                     {
+        //                         dis = temp;
+        //                     }
+        //                 }
+        //                 if (dis < nearestDis)
+        //                 {
+        //                     nearestID = p;
+        //                     nearestDis = dis;
+        //                 }
+        //             }
+        //             if (nearestID != null)
+        //             {
+        //                 // Console.WriteLine(angle);
+        //                 // Console.WriteLine($"{nearestID.TrueIdentity}: {nearestDis}");
+        //                 AudioSourceList.Add(nearestID.TrueIdentity);
+        //                 if (DateTime.Now.Subtract(LastNVBGTime).TotalSeconds > NVBGCooldownAudio)
+        //                 {
+        //                     Point3D pos2send = nearestID.Position;
+        //                     pos2send = VhtInfo.World2Cam(pos2send);
+        //                     Console.WriteLine($"Send location message to NVBG: multimodal:true;%;identity:{nearestID.TrueIdentity}(Detected: {nearestID.Identity});%;location:{pos2send.x}:{pos2send.y}:{pos2send.z}");
+        //                     manager.SendText(TopicToNVBG, $"multimodal:true;%;identity:{nearestID.TrueIdentity};%;location:{pos2send.x}:{pos2send.y}:{pos2send.z}");
+        //                     LastNVBGTime = DateTime.Now;
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
-        private static void AddNewMapper(CameraSpacePoint[] mapper, Envelope envelope)
-        {
-            var time = envelope.OriginatingTime;
-            KinectMappingBuffer.Add(time, mapper);
-            while (KinectMappingBuffer.Last().Key.Subtract(KinectMappingBuffer.First().Key).TotalSeconds > 10)
-            {
-                var rem_time = KinectMappingBuffer.First().Key;
-                KinectMappingBuffer.RemoveAt(0);
-            }
-        }
+        // private static void AddNewMapper(CameraSpacePoint[] mapper, Envelope envelope)
+        // {
+        //     var time = envelope.OriginatingTime;
+        //     // KinectMappingBuffer.Add(time, mapper);
+        //     // while (KinectMappingBuffer.Last().Key.Subtract(KinectMappingBuffer.First().Key).TotalSeconds > 10)
+        //     // {
+        //     //     var rem_time = KinectMappingBuffer.First().Key;
+        //     //     KinectMappingBuffer.RemoveAt(0);
+        //     // }
+        // }
 
         private static void SendDialogToBazaar(IStreamingSpeechRecognitionResult result, Envelope envelope)
         {
