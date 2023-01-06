@@ -53,11 +53,9 @@ namespace CMU.Smartlab.Communication
             this.manager = manager;
         }
 
-        // public void SendImage(Shared<Microsoft.Psi.Imaging.Image> image, Envelope envelope)
         public void SendImage(Shared<Image> image, Envelope envelope)
         {
             Image rawData = image.Resource;
-            // Image rawData = image.UnmanagedBuffer;
             Task task = new Task(() =>
             {
                 lock (this.Lock)
@@ -67,8 +65,9 @@ namespace CMU.Smartlab.Communication
                         // Console.WriteLine($"Width = {rawData.Width}, Height = {rawData.Height}, Format = {rawData.PixelFormat}");
                         int w = rawData.Width;
                         float scale = (float)SendingWidth / w;
-                        var sharedScaledImage = rawData.Scale(scale, scale, SamplingMode.Bilinear);
-                        rawData = sharedScaledImage.Resource;
+                        Image sharedScaledImage = rawData.Scale(scale, scale, SamplingMode.Bilinear);
+                        // rawData = sharedScaledImage.Resource;
+                        rawData = sharedScaledImage;
                         // Console.WriteLine($"After scaling: Width = {rawData.Width}, Height = {rawData.Height}, Format = {rawData.PixelFormat}");
                         this.manager.SendText(this.SizeTopic, $"{rawData.Width}:{rawData.Height}");
                         this.manager.SendText(this.PropertyTopic, $"camera_id:str:{this.Name}");
