@@ -120,7 +120,7 @@ namespace SigdialDemo
                         //     break;
                         // case ConsoleKey.D2:
                         case ConsoleKey.D1:
-                            RunDemo(false, "webcam");
+                            RunDemo2(false, "webcam");
                             break;
                         case ConsoleKey.D3:
                             RunDemo(false, "lorex");
@@ -143,7 +143,7 @@ namespace SigdialDemo
                             break;
                         // case ConsoleKey.D8:
                         case ConsoleKey.D2:
-                            RunDemo(true);
+                            RunDemo2(true);
                             break;
                         case ConsoleKey.Q:
                             exit = true;
@@ -446,6 +446,19 @@ namespace SigdialDemo
             {
                 Console.WriteLine($">>> Send MULTIMODAL message to VHT: multimodal:false;%;identity:someone;%;text:{s}");
                 manager.SendText(TopicToVHText, s);
+            }
+        }
+
+
+        public static void RunDemo2(bool AudioOnly = false, string cameraType = "webcam")
+        {
+            using (var p = Pipeline.Create())
+            {
+                Console.WriteLine("Allocating NewMQSource: faces, tcp://localhost:30001"); 
+                var mq = new NetMQSource<String>(p, "faces", "tcp://localhost:30001", JsonFormat.Instance);
+                Console.WriteLine("NewMQSource allocated"); 
+                mq.Do(x => Console.WriteLine($"Message: {x}"));
+                p.Run();
             }
         }
 
