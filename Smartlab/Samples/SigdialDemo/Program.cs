@@ -100,13 +100,13 @@ namespace SigdialDemo
                 {
                     Console.WriteLine("############################################################################");
                     // Console.WriteLine("1) Multimodal streaming, Kinect. Press any key to finish streaming.");
-                    Console.WriteLine("2) Multimodal streaming, Webcam. Press any key to finish streaming.");
+                    Console.WriteLine("1) Multimodal streaming, Webcam. Press any key to finish streaming.");
                     // Console.WriteLine("3) Multimodal streaming, Lorex camera. Press any key to finish streaming.");
                     // Console.WriteLine("4) Multimodal streaming, Amcrest camera on ethernet. Press any key to finish streaming.");
                     // Console.WriteLine("5) Multimodal streaming, Amcrest camera on wifi. Press any key to finish streaming.");
                     // Console.WriteLine("6) Multimodal streaming, Foscam camera on ethernet. Press any key to finish streaming.");
                     // Console.WriteLine("7) Multimodal streaming, Foscam camera on wifi. Press any key to finish streaming.");
-                    Console.WriteLine("8) Audio only. Press any key to finish streaming.");
+                    Console.WriteLine("2) Audio only. Press any key to finish streaming.");
                     Console.WriteLine("Q) Quit.");
                     ConsoleKey key = Console.ReadKey().Key;
                     Console.WriteLine();
@@ -115,7 +115,8 @@ namespace SigdialDemo
                         // case ConsoleKey.D1:
                         //     RunDemo(false, "Kinect");
                         //     break;
-                        case ConsoleKey.D2:
+                        // case ConsoleKey.D2:
+                        case ConsoleKey.D1:
                             RunDemo(false, "webcam");
                             break;
                         case ConsoleKey.D3:
@@ -137,7 +138,8 @@ namespace SigdialDemo
                             Console.WriteLine("Streaming Foscam camera on wifi ...");
                             RunDemo(false, "foscam_wifi");
                             break;
-                        case ConsoleKey.D8:
+                        // case ConsoleKey.D8:
+                        case ConsoleKey.D2:
                             RunDemo(true);
                             break;
                         case ConsoleKey.Q:
@@ -377,13 +379,13 @@ namespace SigdialDemo
                         // Store the inden2tity information and send it to other module.
                         IdInfoList.Add(info);
                     }
-                    //Console.WriteLine($"Received location message from RealModal: multimodal:true;%;identity:{info.TrueIdentity}(Detected: {info.Identity});%;location:{infos[i].Split('&')[1]}");
+                    //Console.WriteLine($"Received location message from RealModal: multimodal:::true;%;identity:::{info.TrueIdentity}(Detected: {info.Identity});%;location:::{infos[i].Split('&')[1]}");
                     if (DateTime.Now.Subtract(LastNVBGTime).TotalSeconds > NVBGCooldownLocation)
                     {
                         Point3D pos2send = IdInfoList?.Last().Position;
                         pos2send = VhtInfo.World2Cam(pos2send);
-                        Console.WriteLine($"Send location message to NVBG: multimodal:true;%;identity:{info.TrueIdentity}(Detected: {info.Identity});%;location:{pos2send.x}:{pos2send.y}:{pos2send.z}");
-                        manager.SendText(TopicToNVBG, $"multimodal:true;%;identity:{info.TrueIdentity};%;location:{pos2send.x}:{pos2send.y}:{pos2send.z}");
+                        Console.WriteLine($"Send location message to NVBG: multimodal:::true;%;identity:::{info.TrueIdentity}(Detected: {info.Identity});%;locationd:{pos2send.x}:{pos2send.y}:{pos2send.z}");
+                        manager.SendText(TopicToNVBG, $"multimodal:::true;%;identity:::{info.TrueIdentity};%;location:{pos2send.x}:::{pos2send.y}:{pos2send.z}");
                         LastNVBGTime = DateTime.Now;
                     }
                 }
@@ -423,9 +425,9 @@ namespace SigdialDemo
                             if (PUtil.Distance(kv2.Value, cur.Position) < SocialDistance)
                             {
                                 LastDistanceWarning = DateTime.Now;
-                                manager.SendText(TopicToBazaar, "multimodal:true;%;identity:group;%;pose:too_close");
+                                manager.SendText(TopicToBazaar, "multimodal:::true;%;identity:::group;%;pose:::too_close");
                                 Console.WriteLine($"{kv2.Key} is too close to {cur.TrueIdentity}! Distance:{PUtil.Distance(kv2.Value, cur.Position)}");
-                                Console.WriteLine("Send message to Bazaar: multimodal:true;%;identity:group;%;pose:too_close");
+                                Console.WriteLine("Send message to Bazaar: multimodal:::true;%;identity:::group;%;pose:::too_close");
                                 break;
                             }
                         }
@@ -550,28 +552,37 @@ namespace SigdialDemo
 
                 // Send audio part to Bazaar
 
+                // =================== Speech-to-Text ==================
                 // var audio = store.OpenStream<AudioBuffer>("Audio");
-                var audioConfig = new AudioCaptureConfiguration();
-                // var audioConfig = new AudioCaptureConfiguration()
+                // var audioConfig = new AudioCaptureConfiguration();
+                // // var audioConfig = new AudioCaptureConfiguration()
+                // // {
+                // //     OutputFormat = WaveFormat.Create16kHz1Channel16BitPcm(),
+                // //     DropOutOfOrderPackets = true
+                // // };
+                // IProducer<AudioBuffer> audio = new AudioCapture(pipeline, audioConfig);
+
+                // var vad = new SystemVoiceActivityDetector(pipeline);
+                // ContinuousSpeechRecognizer(pipeline, azureSubscriptionKey, azureRegion);
+                // audio.PipeTo(vad);
+
+                // var recognizer = new AzureSpeechRecognizer(pipeline, new AzureSpeechRecognizerConfiguration()
                 // {
-                //     OutputFormat = WaveFormat.Create16kHz1Channel16BitPcm(),
-                //     DropOutOfOrderPackets = true
-                // };
-                IProducer<AudioBuffer> audio = new AudioCapture(pipeline, audioConfig);
+                //     SubscriptionKey = Program.AzureSubscriptionKey,
+                //     Region = Program.AzureRegion
+                // });
+                // var annotatedAudio = audio.Join(vad);
+                // annotatedAudio.PipeTo(recognizer);
 
-                var vad = new SystemVoiceActivityDetector(pipeline);
-                audio.PipeTo(vad);
+                // var finalResults = recognizer.Out.Where(result => result.IsFinal);
+                // finalResults.Do(SendDialogToBazaar);
 
-                var recognizer = new AzureSpeechRecognizer(pipeline, new AzureSpeechRecognizerConfiguration()
-                {
-                    SubscriptionKey = Program.AzureSubscriptionKey,
-                    Region = Program.AzureRegion
-                });
-                var annotatedAudio = audio.Join(vad);
-                annotatedAudio.PipeTo(recognizer);
+                // =================== Speech-to-Text ==================
 
-                var finalResults = recognizer.Out.Where(result => result.IsFinal);
-                finalResults.Do(SendDialogToBazaar);
+                for (;true == true;) {
+                    SendHardCodedTextToBazaar("Hello World!");
+                    System.Threading.Thread.Sleep(5000);
+                }
 
                 // Todo: Add some data storage here
                 // var dataStore = Store.Create(pipeline, Program.AppName, Environment.GetFolderPath(Environment.SpecialFolder.MyVideos));
@@ -648,8 +659,8 @@ namespace SigdialDemo
         //                 {
         //                     Point3D pos2send = nearestID.Position;
         //                     pos2send = VhtInfo.World2Cam(pos2send);
-        //                     Console.WriteLine($"Send location message to NVBG: multimodal:true;%;identity:{nearestID.TrueIdentity}(Detected: {nearestID.Identity});%;location:{pos2send.x}:{pos2send.y}:{pos2send.z}");
-        //                     manager.SendText(TopicToNVBG, $"multimodal:true;%;identity:{nearestID.TrueIdentity};%;location:{pos2send.x}:{pos2send.y}:{pos2send.z}");
+        //                     Console.WriteLine($"Send location message to NVBG: multimodal:::true;%;identity:::{nearestID.TrueIdentity}(Detected: {nearestID.Identity});%;location:::{pos2send.x}:{pos2send.y}:{pos2send.z}");
+        //                     manager.SendText(TopicToNVBG, $"multimodal:::true;%;identity:::{nearestID.TrueIdentity};%;location:::{pos2send.x}:{pos2send.y}:{pos2send.z}");
         //                     LastNVBGTime = DateTime.Now;
         //                 }
         //             }
@@ -701,7 +712,7 @@ namespace SigdialDemo
                     if (id != null)
                     {
                         AudioSourceList.Clear();
-                        String messageToBazaar = $"multimodal:true;%;identity:{id};%;speech:{result.Text}";
+                        String messageToBazaar = $"multimodal:::true;%;identity:::{id};%;speech:::{result.Text}";
                         Console.WriteLine($"Send text message to Bazaar: {messageToBazaar}");
                         // Console.WriteLine("Sending message to Bazaar through NetMQ: {0}", messageToBazaar);
                         // netmqpublisher = new NetMqPublisher(TcpIPPublisher);
@@ -721,7 +732,7 @@ namespace SigdialDemo
                 }
                 if (IdInfoList != null && IdInfoList.Count > 0)
                 {
-                    String messageToBazaar = $"multimodal:true;%;identity:{IdInfoList.Last().TrueIdentity};%;speech:{result.Text}";
+                    String messageToBazaar = $"multimodal:::true;%;identity:::{IdInfoList.Last().TrueIdentity};%;speech:::{result.Text}";
                     Console.WriteLine($"Send text message to Bazaar: {messageToBazaar}");
                     manager.SendText(TopicToBazaar, messageToBazaar);
                     manager.SendText(TopicToMacaw, result.Text);
@@ -738,7 +749,7 @@ namespace SigdialDemo
                 else
                 {
                     String name = getRandomName();
-                    String messageToBazaar = $"multimodal:true;%;identity:{name};%;speech:{result.Text}";
+                    String messageToBazaar = $"multimodal:::true;%;identity:::{name};%;speech:::{result.Text}";
                     //String location = getRandomLocation(); 
                     // Console.WriteLine("Sending message to Bazaar through NetMQ: {0}", messageToBazaar);
                     // netmqpublisher = new NetMqPublisher(TcpIPPublisher);
@@ -756,6 +767,98 @@ namespace SigdialDemo
                 }
             }
         }
+
+
+
+        private static void SendHardCodedTextToBazaar(String result)
+        {
+            String speech = result;
+            if (speech != "")
+            {
+                if (AudioSourceList.Count > 0)
+                {
+                    Dictionary<string, int> temp = new Dictionary<string, int>();
+                    foreach (var name in AudioSourceList)
+                    {
+                        if (temp.ContainsKey(name))
+                        {
+                            temp[name] += 1;
+                        }
+                        else
+                        {
+                            temp[name] = 1;
+                        }
+                    }
+                    int max = 0;
+                    string id = null;
+                    foreach (var kv in temp)
+                    {
+                        if (kv.Value > max)
+                        {
+                            max = kv.Value;
+                            id = kv.Key;
+                        }
+                    }
+                    Console.WriteLine($"{max}, {id}");
+                    if (id != null)
+                    {
+                        AudioSourceList.Clear();
+                        String messageToBazaar = $"multimodal:::true;%;identity:::{id};%;speech:::{speech}";
+                        Console.WriteLine($"Send text message to Bazaar: {messageToBazaar}");
+                        // Console.WriteLine("Sending message to Bazaar through NetMQ: {0}", messageToBazaar);
+                        // netmqpublisher = new NetMqPublisher(TcpIPPublisher);
+                        // netmqpublisher.Publish("TcpToBazaar", messageToBazaar);
+                    /*    using (var pubSocket = new PublisherSocket())
+                        {
+                            pubSocket.Options.SendHighWatermark = 1000;
+                            pubSocket.Bind(TcpIPPublisher);
+                            Console.WriteLine("Sending message to Bazaar : {0}", messageToBazaar);
+                            pubSocket.SendMoreFrame("TcpToBazaar").SendFrame(messageToBazaar);
+                        }*/
+                        
+                        manager.SendText(TopicToBazaar, messageToBazaar);
+                        manager.SendText(TopicToMacaw, speech);
+                        return;
+                    }
+                }
+                if (IdInfoList != null && IdInfoList.Count > 0)
+                {
+                    String messageToBazaar = $"multimodal:::true;%;identity:::{IdInfoList.Last().TrueIdentity};%;speech:::{speech}";
+                    Console.WriteLine($"Send text message to Bazaar: {messageToBazaar}");
+                    manager.SendText(TopicToBazaar, messageToBazaar);
+                    manager.SendText(TopicToMacaw, speech);
+                    // netmqpublisher = new NetMqPublisher(TcpIPPublisher);
+                    // netmqpublisher.Publish("TcpToBazaar", messageToBazaar);
+                    /*using (var pubSocket = new PublisherSocket())
+                    {
+                        pubSocket.Options.SendHighWatermark = 1000;
+                        pubSocket.Bind(TcpIPPublisher);
+                        Console.WriteLine("Sending message to Bazaar : {0}", messageToBazaar);
+                        pubSocket.SendMoreFrame("TcpToBazaar").SendFrame(messageToBazaar);
+                    }*/
+                }
+                else
+                {
+                    String name = getRandomName();
+                    String messageToBazaar = $"multimodal:::true;%;identity:::{name};%;speech:::{speech}";
+                    //String location = getRandomLocation(); 
+                    // Console.WriteLine("Sending message to Bazaar through NetMQ: {0}", messageToBazaar);
+                    // netmqpublisher = new NetMqPublisher(TcpIPPublisher);
+                    // netmqpublisher.Publish("TcpToBazaar", messageToBazaar);
+                   /* using (var pubSocket = new PublisherSocket())
+                    {
+                        pubSocket.Options.SendHighWatermark = 1000;
+                        pubSocket.Bind(TcpIPPublisher);
+                        Console.WriteLine("Sending message to Bazaar : {0}", messageToBazaar);
+                        pubSocket.SendMoreFrame("TcpToBazaar").SendFrame(messageToBazaar);
+                    }*/
+                    Console.WriteLine($"Please open the Realmodal first!.Send fake text message to Bazaar: {messageToBazaar}");
+                    manager.SendText(TopicToBazaar, messageToBazaar);
+                    manager.SendText(TopicToMacaw, speech);
+                }
+            }
+        }
+
 
         private static String getRandomName()
         {
