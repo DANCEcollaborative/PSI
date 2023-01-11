@@ -31,6 +31,7 @@ using Microsoft.Psi.Interop.Transport;
 using Apache.NMS;
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Transport.Discovery;
+using Rectangle = System.Drawing.Rectangle;
 
 
 namespace SigdialDemo
