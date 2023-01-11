@@ -25,6 +25,8 @@ using Microsoft.Psi.CognitiveServices.Speech;
 using Microsoft.Psi.Imaging;
 using Microsoft.Psi.Media;
 using Microsoft.Psi.Speech;
+using Microsoft.Psi.Interop.Format;
+using Microsoft.Psi.Interop.Transport;
 // using Microsoft.Psi.Kinect;
 using Apache.NMS;
 using Apache.NMS.ActiveMQ;
@@ -452,6 +454,20 @@ namespace SigdialDemo
             {
                 pipeline.PipelineExceptionNotHandled += Pipeline_PipelineException;
                 pipeline.PipelineCompleted += Pipeline_PipelineCompleted;
+
+                var input_reader = new NetMQSource<dynamic>(
+                    pipeline,
+                    "faces",
+                    "tcp://127.0.0.1:30001",
+                    MessagePackFormat.Instance);
+                
+                input_reader.Select(rects =>
+                    ((IEnumerable<dynamic>)rects).Select(r =>
+                        new Rectangle(r["x"], r["y"], r["w"], r["h"])).ToList()).Do(r=>{
+                            // foreach (var rect in r)
+                            //     Console.WriteLine(rect);
+                            Console.WriteLine($"{r.Count} - {r[0]}");
+                        });
 
                 // var store = Store.Open(pipeline, Program.LogName, Program.LogPath);
                 // Send video part to Python
