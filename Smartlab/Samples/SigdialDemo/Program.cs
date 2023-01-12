@@ -122,7 +122,7 @@ namespace SigdialDemo
                         //     break;
                         // case ConsoleKey.D2:
                         case ConsoleKey.D1:
-                            RunDemo3(false, "webcam");
+                            RunDemo4(false, "webcam");
                             break;
                         case ConsoleKey.D3:
                             RunDemo(false, "lorex");
@@ -145,7 +145,7 @@ namespace SigdialDemo
                             break;
                         // case ConsoleKey.D8:
                         case ConsoleKey.D2:
-                            RunDemo3(true);
+                            RunDemo4(true);
                             break;
                         case ConsoleKey.Q:
                             exit = true;
@@ -452,6 +452,39 @@ namespace SigdialDemo
         }
 
 
+        // This method is identical to RunDemo3 except the publisher is commented out. Port 40001 does not show as allocated.
+        public static void RunDemo4(bool AudioOnly = false, string cameraType = "webcam")
+        {
+            string address = "tcp://localhost:40001";
+            // var pubSocket = new PublisherSocket();
+            // pubSocket.Options.SendHighWatermark = 1000;
+            // pubSocket.Bind(address); 
+            var subSocket = new SubscriberSocket();
+            subSocket.Connect(address);
+            Thread.Sleep(100);
+            subSocket.SubscribeToAnyTopic();
+            String received = "";
+
+            // Testing send & receive over same socket
+            for (;;) {
+                for (;;) {
+                    // pubSocket.SendFrame( "Howdy from NetMQ!", false );
+                    Thread.Sleep(2000);
+                    Console.WriteLine( "About to try subSocket.ReceiveFrameString");
+                    received = subSocket.ReceiveFrameString(); 
+                    if  (received == "") {
+                        Console.WriteLine( "Received nothing");
+                        continue; 
+                    }
+                    Console.WriteLine( "Received something");
+                    break; 
+                }
+                Console.WriteLine( received );
+                Thread.Sleep(2000);
+            }
+        }
+
+        // This method tests sending & receiving over the same socket. Success!
         public static void RunDemo3(bool AudioOnly = false, string cameraType = "webcam")
         {
             string address = "tcp://localhost:40001";
