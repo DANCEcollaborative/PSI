@@ -32,6 +32,8 @@ using Apache.NMS;
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Transport.Discovery;
 using Rectangle = System.Drawing.Rectangle;
+using NetMQ;
+using NetMQ.Sockets;
 
 
 namespace SigdialDemo
@@ -120,7 +122,7 @@ namespace SigdialDemo
                         //     break;
                         // case ConsoleKey.D2:
                         case ConsoleKey.D1:
-                            RunDemo2(false, "webcam");
+                            RunDemo3(false, "webcam");
                             break;
                         case ConsoleKey.D3:
                             RunDemo(false, "lorex");
@@ -143,7 +145,7 @@ namespace SigdialDemo
                             break;
                         // case ConsoleKey.D8:
                         case ConsoleKey.D2:
-                            RunDemo2(true);
+                            RunDemo3(true);
                             break;
                         case ConsoleKey.Q:
                             exit = true;
@@ -446,6 +448,37 @@ namespace SigdialDemo
             {
                 Console.WriteLine($">>> Send MULTIMODAL message to VHT: multimodal:false;%;identity:someone;%;text:{s}");
                 manager.SendText(TopicToVHText, s);
+            }
+        }
+
+
+        public static void RunDemo3(bool AudioOnly = false, string cameraType = "webcam")
+        {
+            string address = "tcp://localhost:40001";
+            var pubSocket = new PublisherSocket();
+            pubSocket.Options.SendHighWatermark = 1000;
+            pubSocket.Bind(address); 
+            var subSocket = new SubscriberSocket();
+            subSocket.Connect(address);
+            Thread.Sleep(100);
+            subSocket.SubscribeToAnyTopic();
+            String received = "";
+
+            // Testing send & receive over same socket
+            for (;;) {
+                for (;;) {
+                    pubSocket.SendFrame( "Howdy from NetMQ!", false );
+                    Console.WriteLine( "About to try subSocket.ReceiveFrameString");
+                    received = subSocket.ReceiveFrameString(); 
+                    if  (received == "") {
+                        Console.WriteLine( "Received nothing");
+                        continue; 
+                    }
+                    Console.WriteLine( "Received something");
+                    break; 
+                }
+                Console.WriteLine( received );
+                Thread.Sleep(2000);
             }
         }
 

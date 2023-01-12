@@ -30,7 +30,8 @@ namespace CMU.Smartlab.Communication
             }
 
 
-            public event Action<string, string> Nofity = delegate { };
+            // public event Action<string, string> Nofity = delegate { };
+            public event Action<string, string> Notify = delegate { };
 
 
             public void RegisterSubscriber(List<string> topics)
@@ -74,7 +75,7 @@ namespace CMU.Smartlab.Communication
                     {
                         string messageTopicReceived = _subscriberSocket.ReceiveFrameString();
                         string messageReceived = _subscriberSocket.ReceiveFrameString();
-                        Nofity(messageTopicReceived, messageReceived);
+                        Notify(messageTopicReceived, messageReceived);
                     }
                 });
             }
@@ -92,7 +93,7 @@ namespace CMU.Smartlab.Communication
                 {
                     string messageTopicReceived = _subscriberSocket.ReceiveFrameString();
                     string messageReceived = _subscriberSocket.ReceiveFrameString();
-                    Nofity(messageTopicReceived, messageReceived);
+                    Notify(messageTopicReceived, messageReceived);
                 }
             });
         }
