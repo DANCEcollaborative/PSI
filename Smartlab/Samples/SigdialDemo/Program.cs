@@ -100,14 +100,14 @@ namespace SigdialDemo
         public static void Main(string[] args)
         {
             SetConsole();
-            if (Initialize())
+            // if (Initialize())    // TEMPORARY
+            if (true)
             {
                 bool exit = false;
                 while (!exit)
                 {
                     Console.WriteLine("############################################################################");
-                    Console.WriteLine("1) Respond to requests from remote device. Press any key to finish streaming.");
-                    Console.WriteLine("Q) Quit.");
+                    Console.WriteLine("1) Respond to requests from remote device.");
                     ConsoleKey key = Console.ReadKey().Key;
                     Console.WriteLine();
                     switch (key)
@@ -115,16 +115,16 @@ namespace SigdialDemo
                         case ConsoleKey.D1:
                             RunDemoWithRemote();
                             break;
-                        case ConsoleKey.Q:
-                            exit = true;
-                            break;
+                        // case ConsoleKey.Q:
+                        //     exit = true;
+                        //     break;
                     }
                 }
             }
-            else
-            {
-                Console.ReadLine();
-            }
+            // else
+            // {
+            //     Console.ReadLine();
+            // }
         }
 
         private static void SetConsole()
