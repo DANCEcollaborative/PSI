@@ -34,6 +34,8 @@ using Apache.NMS.ActiveMQ.Transport.Discovery;
 using Rectangle = System.Drawing.Rectangle;
 using NetMQ;
 using NetMQ.Sockets;
+// using NetMQSource;
+// using ZeroMQ; 
 
 
 namespace SigdialDemo
@@ -122,7 +124,7 @@ namespace SigdialDemo
                         //     break;
                         // case ConsoleKey.D2:
                         case ConsoleKey.D1:
-                            RunDemo4(false, "webcam");
+                            RunDemo12(false, "webcam");
                             break;
                         case ConsoleKey.D3:
                             RunDemo(false, "lorex");
@@ -145,7 +147,7 @@ namespace SigdialDemo
                             break;
                         // case ConsoleKey.D8:
                         case ConsoleKey.D2:
-                            RunDemo4(true);
+                            RunDemo12(true);
                             break;
                         case ConsoleKey.Q:
                             exit = true;
@@ -451,11 +453,263 @@ namespace SigdialDemo
             }
         }
 
+        // Works sending to itself locally
+        public static void RunDemo13(bool AudioOnly = false, string cameraType = "webcam")
+        {
+            using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
+            using (var requestSocket = new RequestSocket(">tcp://localhost:40001"))
+            for (;;) 
+            {
+                {
+                    Console.WriteLine("requestSocket : Sending 'Hello'");
+                    requestSocket.SendFrame(">>>>> Hello from afar! <<<<<<");
+                    var message = responseSocket.ReceiveFrameString();
+                    Console.WriteLine("responseSocket : Server Received '{0}'", message);
+                    Console.WriteLine("responseSocket Sending 'Hibackatcha!'");
+                    responseSocket.SendFrame("Hibackatcha!");
+                    message = requestSocket.ReceiveFrameString();
+                    Console.WriteLine("requestSocket : Received '{0}'", message);
+                    Console.ReadLine();
+                    Thread.Sleep(1000);
+                }
+            }
+        }
+
+        // ...
+        public static void RunDemo12(bool AudioOnly = false, string cameraType = "webcam")
+        {
+            using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
+            // using (var requestSocket = new RequestSocket(">tcp://localhost:5555"))
+            {
+                for (;;) 
+                {
+                    Console.WriteLine("responseSocket : Waiting for request");
+                    var message = responseSocket.ReceiveFrameString();
+                    Console.WriteLine("responseSocket : Server Received '{0}'", message);
+                    Console.WriteLine("responseSocket Sending 'Hibackatcha!'");
+                    responseSocket.SendFrame("Hibackatcha!");
+                }
+            }
+        }
+
+        // // ...
+        // public static void RunDemo11(bool AudioOnly = false, string cameraType = "webcam")
+        // {
+        //     string address = "tcp://localhost:40001";
+        //     // string address = "tcp://127.0.0.1:40001";
+        //     // String topicReceived;
+        //     // String received;
+
+		// 	using (var context = new ZContext())
+		// 	using (var responder = new ZSocket(context, ZSocketType.REP))
+		// 	{
+		// 		// Connect
+		// 		responder.Connect(address);
+
+		// 		for (;;) {
+		// 		{
+		// 			using (ZFrame request = responder.ReceiveFrame())
+		// 			{
+		// 				Console.WriteLine("Received {0}", request.ReadString());
+
+		// 				// Do some work
+		// 				Thread.Sleep(1);
+
+		// 				// Send
+		// 				responder.Send(new ZFrame("Hi Backatcha!"));
+		// 			}
+		// 		}
+		// 		}
+		// 	}
+        // }
+
+        // ...
+        public static void RunDemo10(bool AudioOnly = false, string cameraType = "webcam")
+        {
+            // string address = "tcp://localhost:40001";
+            // string address = "tcp://127.0.0.1:40001";
+            // String topicReceived;
+            // String received;
+
+            using (var p = Pipeline.Create())
+            {
+                var mq = new NetMQSource<double>(p, "random-topic", "tcp://localhost:40001", JsonFormat.Instance);
+                // var mq = new NetMQSource(p, "random-topic", "tcp://localhost:40001", JsonFormat.Instance);
+                mq.Do(x => Console.WriteLine($"Message: {x}"));
+                p.Run();
+            }
+        }
+
+        // ...
+        public static void RunDemo9(bool AudioOnly = false, string cameraType = "webcam")
+        {
+            // string address = "tcp://localhost:40001";
+            string address = "tcp://127.0.0.1:40001";
+            String topicReceived;
+            String received;
+
+            using (var subSocket = new SubscriberSocket()) 
+            {
+                subSocket.Options.ReceiveHighWatermark = 1000;
+                subSocket.Bind(address);
+                // subSocket.Connect(address);
+                // String topic = "nano"; 
+                String topic = "15218"; 
+                subSocket.Subscribe(topic);
+                Thread.Sleep(100);
+                for (;;) {
+                    Console.WriteLine( "About to try subSocket.ReceiveFrameString");
+                    topicReceived = subSocket.ReceiveFrameString(); 
+                    received = subSocket.ReceiveFrameString(); 
+                    Console.WriteLine("topicReceived: " + topicReceived);
+                    Console.WriteLine("received: " + received);
+                    if  (received == "") {
+                        Console.WriteLine( "Received nothing");
+                        continue; 
+                    }
+                    Console.WriteLine( "Received something");
+                    break; 
+                }
+            }
+        }
+
+        // ...
+        // public static void RunDemo8(bool AudioOnly = false, string cameraType = "webcam")
+        // {
+        //     // string address = "tcp://localhost:40001";
+        //     string address = "tcp://127.0.0.1:40001";
+        // 	using (var context = new ZContext())
+		// 	using (var subscriber = new ZSocket(context, ZSocketType.SUB))
+		// 	{
+		// 		Console.WriteLine("Binding to ", address);
+		// 		subscriber.Bind(address);
+
+		// 		// Subscribe to zipcode
+		// 		string zipCode = "15218";
+		// 		Console.WriteLine("Subscribing to zip code {0} ...", zipCode);
+		// 		subscriber.Subscribe(zipCode);
+
+        //         while (true) {
+        //             using (var replyFrame = subscriber.ReceiveFrame())
+		// 			{
+		// 				string reply = replyFrame.ReadString();
+		// 				Console.WriteLine(reply);
+        //             }
+        //         }
+        //     }
+        // }
+
+
+        // ...
+        public static void RunDemo7(bool AudioOnly = false, string cameraType = "webcam")
+        {
+            // string address = "tcp://localhost:40001";
+            string address = "tcp://127.0.0.1:40001";
+            var subSocket = new SubscriberSocket();
+            subSocket.Options.ReceiveHighWatermark = 1000;
+            subSocket.Bind(address);
+
+            // String topic = "nano"; 
+            String topic = "15218"; 
+            subSocket.Subscribe(topic);
+            // subSocket.Subscribe("");
+            // subSocket.SubscribeToAnyTopic();
+            Thread.Sleep(100);
+            String topicReceived;
+            String received;
+
+            for (;;) {
+                for (;;) {
+                    Console.WriteLine( "About to try subSocket.ReceiveFrameString");
+                    topicReceived = subSocket.ReceiveFrameString(); 
+                    received = subSocket.ReceiveFrameString(); 
+                    Console.WriteLine("topicReceived: " + topicReceived);
+                    Console.WriteLine("received: " + received);
+                    if  (received == "") {
+                        Console.WriteLine( "Received nothing");
+                        continue; 
+                    }
+                    Console.WriteLine( "Received something");
+                    break; 
+                }
+                Console.WriteLine("Received: " + received );
+                Thread.Sleep(2000);
+            }
+
+        }
+
+
+
+        // ...
+        public static void RunDemo6(bool AudioOnly = false, string cameraType = "webcam")
+        {
+            // string address = "tcp://localhost:40001";
+            string address = "tcp://127.0.0.1:40001";
+            // var pubSocket = new PublisherSocket();
+            // pubSocket.Options.SendHighWatermark = 1000;
+            // pubSocket.Bind(address); 
+
+            var subSocket = new SubscriberSocket();
+            // subSocket.Connect(address);
+            subSocket.Bind(address);
+            Thread.Sleep(100);
+            subSocket.SubscribeToAnyTopic();
+
+            // var subSocket = new RequestSocket(address);     
+            // Thread.Sleep(100);
+            // subSocket.SubscribeToAnyTopic();
+
+            String message = "NOTHING"; 
+            // Boolean received = "";
+
+            for (;;) {
+                Thread.Sleep(4000);
+                Console.WriteLine( "About to try subSocket.TryReceiveFrameString");
+                var received = subSocket.TryReceiveFrameString(TimeSpan.FromMilliseconds(1000), out message); 
+                Console.WriteLine( "Received raw: " + message);
+                if  (! received) {
+                    Console.WriteLine( "Received nothing");
+                    continue; 
+                } else {
+                    Console.WriteLine( "Received: " + message);
+                } 
+            }
+        }
+
+
+        // This method is identical to RunDemo3 except the publisher is commented out. Port 40001 does not show as allocated.
+        public static void RunDemo5(bool AudioOnly = false, string cameraType = "webcam")
+        {
+            // string address = "tcp://localhost:40001";
+            string address = "tcp://127.0.0.1:40001";
+            // var subSocket = new SubscriberSocket();
+            // subSocket.Connect(address);
+            var subSocket = new RequestSocket(address);
+            Thread.Sleep(100);
+            // subSocket.SubscribeToAnyTopic();
+            Boolean received;
+            String receiveString; 
+            TimeSpan receiveTimeOut = new TimeSpan(0,0,5); 
+
+            // Testing just receive 
+            for (;;) {
+                // pubSocket.SendFrame( "Howdy from NetMQ!", false );
+                Thread.Sleep(2000);
+                Console.WriteLine( "About to try subSocket.ReceiveFrameString");
+                received = subSocket.TryReceiveFrameString(receiveTimeOut, out receiveString); 
+                if  (received) {
+                    Console.WriteLine( "Received " + receiveString);
+                } else {
+                    Console.WriteLine( "Received nothing");
+                }
+            }
+        }
 
         // This method is identical to RunDemo3 except the publisher is commented out. Port 40001 does not show as allocated.
         public static void RunDemo4(bool AudioOnly = false, string cameraType = "webcam")
         {
-            string address = "tcp://localhost:40001";
+            // string address = "tcp://localhost:40001";
+            string address = "tcp://127.0.0.1:40001";
             // var pubSocket = new PublisherSocket();
             // pubSocket.Options.SendHighWatermark = 1000;
             // pubSocket.Bind(address); 
@@ -487,7 +741,8 @@ namespace SigdialDemo
         // This method tests sending & receiving over the same socket. Success!
         public static void RunDemo3(bool AudioOnly = false, string cameraType = "webcam")
         {
-            string address = "tcp://localhost:40001";
+            // string address = "tcp://localhost:40001";
+            string address = "tcp://127.0.0.1:40001";
             var pubSocket = new PublisherSocket();
             pubSocket.Options.SendHighWatermark = 1000;
             pubSocket.Bind(address); 
@@ -520,8 +775,10 @@ namespace SigdialDemo
         {
             using (var p = Pipeline.Create())
             {
-                Console.WriteLine("Allocating NewMQSource: faces, tcp://localhost:30001"); 
-                var mq = new NetMQSource<String>(p, "faces", "tcp://localhost:30001", JsonFormat.Instance);
+                // Console.WriteLine("Allocating NewMQSource: faces, tcp://localhost:30001"); 
+                // var mq = new NetMQSource<String>(p, "faces", "tcp://localhost:30001", JsonFormat.Instance);
+                Console.WriteLine("Allocating NewMQSource: faces, tcp://127.0.0.1:30001"); 
+                var mq = new NetMQSource<String>(p, "faces", "tcp://127.0.0.1:30001", JsonFormat.Instance);
                 Console.WriteLine("NewMQSource allocated"); 
                 mq.Do(x => Console.WriteLine($"Message: {x}"));
                 p.Run();

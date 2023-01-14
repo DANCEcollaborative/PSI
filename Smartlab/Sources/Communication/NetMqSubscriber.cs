@@ -11,11 +11,11 @@ namespace CMU.Smartlab.Communication
     public class NetMqSubscriber
     {
             private SubscriberSocket _subscriberSocket = null;
-            private string _endpoint = @"tcp://127.0.0.1:9876";
+            private string _endpoint = @"tcp://127.0.0.1:40001";
         public NetMqSubscriber()
         {
             _subscriberSocket = new SubscriberSocket();
-            _endpoint = @"tcp://127.0.0.1:9876";
+            _endpoint = @"tcp://127.0.0.1:40001";
         }
         public NetMqSubscriber(string endPoint)
             {
