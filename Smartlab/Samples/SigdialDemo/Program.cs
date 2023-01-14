@@ -106,48 +106,14 @@ namespace SigdialDemo
                 while (!exit)
                 {
                     Console.WriteLine("############################################################################");
-                    // Console.WriteLine("1) Multimodal streaming, Kinect. Press any key to finish streaming.");
-                    Console.WriteLine("1) Multimodal streaming, Webcam. Press any key to finish streaming.");
-                    // Console.WriteLine("3) Multimodal streaming, Lorex camera. Press any key to finish streaming.");
-                    // Console.WriteLine("4) Multimodal streaming, Amcrest camera on ethernet. Press any key to finish streaming.");
-                    // Console.WriteLine("5) Multimodal streaming, Amcrest camera on wifi. Press any key to finish streaming.");
-                    // Console.WriteLine("6) Multimodal streaming, Foscam camera on ethernet. Press any key to finish streaming.");
-                    // Console.WriteLine("7) Multimodal streaming, Foscam camera on wifi. Press any key to finish streaming.");
-                    Console.WriteLine("2) Audio only. Press any key to finish streaming.");
+                    Console.WriteLine("1) Respond to requests from remote device. Press any key to finish streaming.");
                     Console.WriteLine("Q) Quit.");
                     ConsoleKey key = Console.ReadKey().Key;
                     Console.WriteLine();
                     switch (key)
                     {
-                        // case ConsoleKey.D1:
-                        //     RunDemo(false, "Kinect");
-                        //     break;
-                        // case ConsoleKey.D2:
                         case ConsoleKey.D1:
-                            RunDemo12(false, "webcam");
-                            break;
-                        case ConsoleKey.D3:
-                            RunDemo(false, "lorex");
-                            break;
-                        case ConsoleKey.D4:
-                            Console.WriteLine("Streaming Amcrest camera on ethernet ...");
-                            RunDemo(false, "amcrest_ethernet");
-                            break;
-                        case ConsoleKey.D5:
-                            Console.WriteLine("Streaming Amcrest camera on wifi ...");
-                            RunDemo(false, "amcrest_wifi");
-                            break;
-                        case ConsoleKey.D6:
-                            Console.WriteLine("Streaming Foscam camera on ethernet ...");
-                            RunDemo(false, "foscam_ethernet");
-                            break;
-                        case ConsoleKey.D7:
-                            Console.WriteLine("Streaming Foscam camera on wifi ...");
-                            RunDemo(false, "foscam_wifi");
-                            break;
-                        // case ConsoleKey.D8:
-                        case ConsoleKey.D2:
-                            RunDemo12(true);
+                            RunDemoWithRemote();
                             break;
                         case ConsoleKey.Q:
                             exit = true;
@@ -157,7 +123,6 @@ namespace SigdialDemo
             }
             else
             {
-
                 Console.ReadLine();
             }
         }
@@ -453,8 +418,24 @@ namespace SigdialDemo
             }
         }
 
+        // ...
+        public static void RunDemoWithRemote()
+        {
+            using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
+            {
+                for (;;) 
+                {
+                    Console.WriteLine("responseSocket : Waiting for request");
+                    var message = responseSocket.ReceiveFrameString();
+                    Console.WriteLine("responseSocket : Server Received '{0}'", message);
+                    Console.WriteLine("responseSocket Sending 'Hibackatcha!'");
+                    responseSocket.SendFrame("Hibackatcha!");
+                }
+            }
+        }
+
         // Works sending to itself locally
-        public static void RunDemo13(bool AudioOnly = false, string cameraType = "webcam")
+        public static void RunDemoWithLocal()
         {
             using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
             using (var requestSocket = new RequestSocket(">tcp://localhost:40001"))
@@ -475,75 +456,21 @@ namespace SigdialDemo
             }
         }
 
-        // ...
-        public static void RunDemo12(bool AudioOnly = false, string cameraType = "webcam")
+
+        // Not successful
+        public static void RunDemo5()
         {
-            using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
-            // using (var requestSocket = new RequestSocket(">tcp://localhost:5555"))
-            {
-                for (;;) 
-                {
-                    Console.WriteLine("responseSocket : Waiting for request");
-                    var message = responseSocket.ReceiveFrameString();
-                    Console.WriteLine("responseSocket : Server Received '{0}'", message);
-                    Console.WriteLine("responseSocket Sending 'Hibackatcha!'");
-                    responseSocket.SendFrame("Hibackatcha!");
-                }
-            }
-        }
-
-        // // ...
-        // public static void RunDemo11(bool AudioOnly = false, string cameraType = "webcam")
-        // {
-        //     string address = "tcp://localhost:40001";
-        //     // string address = "tcp://127.0.0.1:40001";
-        //     // String topicReceived;
-        //     // String received;
-
-		// 	using (var context = new ZContext())
-		// 	using (var responder = new ZSocket(context, ZSocketType.REP))
-		// 	{
-		// 		// Connect
-		// 		responder.Connect(address);
-
-		// 		for (;;) {
-		// 		{
-		// 			using (ZFrame request = responder.ReceiveFrame())
-		// 			{
-		// 				Console.WriteLine("Received {0}", request.ReadString());
-
-		// 				// Do some work
-		// 				Thread.Sleep(1);
-
-		// 				// Send
-		// 				responder.Send(new ZFrame("Hi Backatcha!"));
-		// 			}
-		// 		}
-		// 		}
-		// 	}
-        // }
-
-        // ...
-        public static void RunDemo10(bool AudioOnly = false, string cameraType = "webcam")
-        {
-            // string address = "tcp://localhost:40001";
-            // string address = "tcp://127.0.0.1:40001";
-            // String topicReceived;
-            // String received;
-
             using (var p = Pipeline.Create())
             {
                 var mq = new NetMQSource<double>(p, "random-topic", "tcp://localhost:40001", JsonFormat.Instance);
-                // var mq = new NetMQSource(p, "random-topic", "tcp://localhost:40001", JsonFormat.Instance);
                 mq.Do(x => Console.WriteLine($"Message: {x}"));
                 p.Run();
             }
         }
 
-        // ...
-        public static void RunDemo9(bool AudioOnly = false, string cameraType = "webcam")
+        // Not successful
+        public static void RunDemo4(bool AudioOnly = false, string cameraType = "webcam")
         {
-            // string address = "tcp://localhost:40001";
             string address = "tcp://127.0.0.1:40001";
             String topicReceived;
             String received;
@@ -552,8 +479,6 @@ namespace SigdialDemo
             {
                 subSocket.Options.ReceiveHighWatermark = 1000;
                 subSocket.Bind(address);
-                // subSocket.Connect(address);
-                // String topic = "nano"; 
                 String topic = "15218"; 
                 subSocket.Subscribe(topic);
                 Thread.Sleep(100);
@@ -573,47 +498,15 @@ namespace SigdialDemo
             }
         }
 
-        // ...
-        // public static void RunDemo8(bool AudioOnly = false, string cameraType = "webcam")
-        // {
-        //     // string address = "tcp://localhost:40001";
-        //     string address = "tcp://127.0.0.1:40001";
-        // 	using (var context = new ZContext())
-		// 	using (var subscriber = new ZSocket(context, ZSocketType.SUB))
-		// 	{
-		// 		Console.WriteLine("Binding to ", address);
-		// 		subscriber.Bind(address);
-
-		// 		// Subscribe to zipcode
-		// 		string zipCode = "15218";
-		// 		Console.WriteLine("Subscribing to zip code {0} ...", zipCode);
-		// 		subscriber.Subscribe(zipCode);
-
-        //         while (true) {
-        //             using (var replyFrame = subscriber.ReceiveFrame())
-		// 			{
-		// 				string reply = replyFrame.ReadString();
-		// 				Console.WriteLine(reply);
-        //             }
-        //         }
-        //     }
-        // }
-
-
-        // ...
-        public static void RunDemo7(bool AudioOnly = false, string cameraType = "webcam")
+        // Not successful
+        public static void RunDemo3(bool AudioOnly = false, string cameraType = "webcam")
         {
-            // string address = "tcp://localhost:40001";
-            string address = "tcp://127.0.0.1:40001";
             var subSocket = new SubscriberSocket();
             subSocket.Options.ReceiveHighWatermark = 1000;
+            string address = "tcp://127.0.0.1:40001";
             subSocket.Bind(address);
-
-            // String topic = "nano"; 
             String topic = "15218"; 
             subSocket.Subscribe(topic);
-            // subSocket.Subscribe("");
-            // subSocket.SubscribeToAnyTopic();
             Thread.Sleep(100);
             String topicReceived;
             String received;
@@ -640,27 +533,15 @@ namespace SigdialDemo
 
 
 
-        // ...
-        public static void RunDemo6(bool AudioOnly = false, string cameraType = "webcam")
+        // Not successful
+        public static void RunDemo2(bool AudioOnly = false, string cameraType = "webcam")
         {
-            // string address = "tcp://localhost:40001";
             string address = "tcp://127.0.0.1:40001";
-            // var pubSocket = new PublisherSocket();
-            // pubSocket.Options.SendHighWatermark = 1000;
-            // pubSocket.Bind(address); 
-
             var subSocket = new SubscriberSocket();
-            // subSocket.Connect(address);
             subSocket.Bind(address);
             Thread.Sleep(100);
             subSocket.SubscribeToAnyTopic();
-
-            // var subSocket = new RequestSocket(address);     
-            // Thread.Sleep(100);
-            // subSocket.SubscribeToAnyTopic();
-
             String message = "NOTHING"; 
-            // Boolean received = "";
 
             for (;;) {
                 Thread.Sleep(4000);
@@ -677,71 +558,9 @@ namespace SigdialDemo
         }
 
 
-        // This method is identical to RunDemo3 except the publisher is commented out. Port 40001 does not show as allocated.
-        public static void RunDemo5(bool AudioOnly = false, string cameraType = "webcam")
-        {
-            // string address = "tcp://localhost:40001";
-            string address = "tcp://127.0.0.1:40001";
-            // var subSocket = new SubscriberSocket();
-            // subSocket.Connect(address);
-            var subSocket = new RequestSocket(address);
-            Thread.Sleep(100);
-            // subSocket.SubscribeToAnyTopic();
-            Boolean received;
-            String receiveString; 
-            TimeSpan receiveTimeOut = new TimeSpan(0,0,5); 
-
-            // Testing just receive 
-            for (;;) {
-                // pubSocket.SendFrame( "Howdy from NetMQ!", false );
-                Thread.Sleep(2000);
-                Console.WriteLine( "About to try subSocket.ReceiveFrameString");
-                received = subSocket.TryReceiveFrameString(receiveTimeOut, out receiveString); 
-                if  (received) {
-                    Console.WriteLine( "Received " + receiveString);
-                } else {
-                    Console.WriteLine( "Received nothing");
-                }
-            }
-        }
-
-        // This method is identical to RunDemo3 except the publisher is commented out. Port 40001 does not show as allocated.
-        public static void RunDemo4(bool AudioOnly = false, string cameraType = "webcam")
-        {
-            // string address = "tcp://localhost:40001";
-            string address = "tcp://127.0.0.1:40001";
-            // var pubSocket = new PublisherSocket();
-            // pubSocket.Options.SendHighWatermark = 1000;
-            // pubSocket.Bind(address); 
-            var subSocket = new SubscriberSocket();
-            subSocket.Connect(address);
-            Thread.Sleep(100);
-            subSocket.SubscribeToAnyTopic();
-            String received = "";
-
-            // Testing send & receive over same socket
-            for (;;) {
-                for (;;) {
-                    // pubSocket.SendFrame( "Howdy from NetMQ!", false );
-                    Thread.Sleep(2000);
-                    Console.WriteLine( "About to try subSocket.ReceiveFrameString");
-                    received = subSocket.ReceiveFrameString(); 
-                    if  (received == "") {
-                        Console.WriteLine( "Received nothing");
-                        continue; 
-                    }
-                    Console.WriteLine( "Received something");
-                    break; 
-                }
-                Console.WriteLine( received );
-                Thread.Sleep(2000);
-            }
-        }
-
         // This method tests sending & receiving over the same socket. Success!
-        public static void RunDemo3(bool AudioOnly = false, string cameraType = "webcam")
+        public static void RunDemoPubSubLocal()
         {
-            // string address = "tcp://localhost:40001";
             string address = "tcp://127.0.0.1:40001";
             var pubSocket = new PublisherSocket();
             pubSocket.Options.SendHighWatermark = 1000;
@@ -769,268 +588,6 @@ namespace SigdialDemo
                 Thread.Sleep(2000);
             }
         }
-
-
-        public static void RunDemo2(bool AudioOnly = false, string cameraType = "webcam")
-        {
-            using (var p = Pipeline.Create())
-            {
-                // Console.WriteLine("Allocating NewMQSource: faces, tcp://localhost:30001"); 
-                // var mq = new NetMQSource<String>(p, "faces", "tcp://localhost:30001", JsonFormat.Instance);
-                Console.WriteLine("Allocating NewMQSource: faces, tcp://127.0.0.1:30001"); 
-                var mq = new NetMQSource<String>(p, "faces", "tcp://127.0.0.1:30001", JsonFormat.Instance);
-                Console.WriteLine("NewMQSource allocated"); 
-                mq.Do(x => Console.WriteLine($"Message: {x}"));
-                p.Run();
-            }
-        }
-
-        public static void RunDemo(bool AudioOnly = false, string cameraType = "webcam")
-        {
-            using (Pipeline pipeline = Pipeline.Create())
-            {
-                pipeline.PipelineExceptionNotHandled += Pipeline_PipelineException;
-                pipeline.PipelineCompleted += Pipeline_PipelineCompleted;
-
-                var input_reader = new NetMQSource<dynamic>(
-                    pipeline,
-                    "faces",
-                    "tcp://127.0.0.1:30001",
-                    MessagePackFormat.Instance);
-                
-                input_reader.Select(rects =>
-                    ((IEnumerable<dynamic>)rects).Select(r =>
-                        new Rectangle(r["x"], r["y"], r["w"], r["h"])).ToList()).Do(r=>{
-                            // foreach (var rect in r)
-                            //     Console.WriteLine(rect);
-                            Console.WriteLine($"{r.Count} - {r[0]}");
-                        });
-
-                // var store = Store.Open(pipeline, Program.LogName, Program.LogPath);
-                // Send video part to Python
-
-                // var video = store.OpenStream<Shared<EncodedImage>>("Image");
-                // if (!AudioOnly && cameraType == "Kinect")
-                // {
-                //     var kinectSensorConfig = new KinectSensorConfiguration
-                //     {
-                //         OutputColor = true,
-                //         OutputDepth = true,
-                //         OutputRGBD = true,
-                //         OutputColorToCameraMapping = true,
-                //         OutputBodies = false,
-                //         OutputAudio = true,
-                //     };
-                //     var kinectSensor = new Microsoft.Psi.Kinect.KinectSensor(pipeline, kinectSensorConfig);
-                //     var kinectColor = kinectSensor.ColorImage;
-                //     var kinectMapping = kinectSensor.ColorToCameraMapper;
-                //     var kinectAudio = kinectSensor.AudioBeamInfo.Where(result => result.Confidence > 0.7);
-                //     kinectMapping.Do(AddNewMapper);
-                //     kinectAudio.Do(FindAudioSource);
-                   
-                //     EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
-                //     var scaled = kinectColor.Resize((float)Program.SendingImageWidth, (float)Program.SendingImageWidth / Program.KinectImageWidth * Program.KinectImageHeight);
-                //     var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
-                //     encoded.Do(helper.SendImage);
-                   
-                // }
-                // else if (!AudioOnly && cameraType == "webcam")
-                if (!AudioOnly && cameraType == "webcam")
-                {
-                    // MediaCapture webcam = new MediaCapture(pipeline, 1280, 720, 30);
-                    MediaCapture webcam = new MediaCapture(pipeline, 1280, 720);
-                    
-                    EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
-                    var scaled = webcam.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
-                    var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
-                    encoded.Do(helper.SendImage);                    
-                }
-                // else if (!AudioOnly && cameraType == "lorex")
-                // {
-                //     var serverUriPSIb = new Uri("rtsp://lorex5416b1.pc.cs.cmu.edu");
-                //     var credentialsPSIb = new NetworkCredential("admin", "54Lorex16");
-                //     RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
-
-                //     EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
-                //     var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
-                //     var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
-                //     encoded.Do(helper.SendImage);
-                // }
-                // else if (!AudioOnly && cameraType == "amcrest_ethernet")
-                // {
-                //     var serverUriPSIb = new Uri("rtsp://amcrest1041a.pc.cs.cmu.edu");
-                //     // var credentialsPSIb = new NetworkCredential("admin", "5416AmcrestA");
-                //     var credentialsPSIb = new NetworkCredential("admin", "admin");
-                //     RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
-
-                //     EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
-                //     var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
-                //     var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
-                //     encoded.Do(helper.SendImage);
-                // }
-                // else if (!AudioOnly && cameraType == "amcrest_wifi")
-                // {
-                //     var serverUriPSIb = new Uri("rtsp://amcrest1041a.wifi.local.cmu.edu");
-                //     // var credentialsPSIb = new NetworkCredential("admin", "5416AmcrestA");
-                //     var credentialsPSIb = new NetworkCredential("admin", "admin");
-                //     RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
-
-                //     EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
-                //     var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
-                //     var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
-                //     encoded.Do(helper.SendImage);
-                // }
-                // else if (!AudioOnly && cameraType == "foscam_ethernet")
-                // {
-                //     var serverUriPSIb = new Uri("rtsp://foscamr4sa.pc.cs.cmu.edu:88/videoMain");
-                //     var credentialsPSIb = new NetworkCredential("admin5416", "5416FoscamA");
-                //     RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
-
-                //     EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
-                //     var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
-                //     var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
-                //     encoded.Do(helper.SendImage);
-                // }
-                // else if (!AudioOnly && cameraType == "foscam_wifi")
-                // {
-                //     var serverUriPSIb = new Uri("rtsp://foscamr4sa.wifi.local.cmu.edu:88/videoMain");
-                //     var credentialsPSIb = new NetworkCredential("admin5416", "5416FoscamA");
-                //     RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
-
-                //     EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
-                //     var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
-                //     var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
-                //     encoded.Do(helper.SendImage);
-                // }
-
-                // Send audio part to Bazaar
-
-                // =================== Speech-to-Text ==================
-                // var audio = store.OpenStream<AudioBuffer>("Audio");
-                // var audioConfig = new AudioCaptureConfiguration();
-                // // var audioConfig = new AudioCaptureConfiguration()
-                // // {
-                // //     OutputFormat = WaveFormat.Create16kHz1Channel16BitPcm(),
-                // //     DropOutOfOrderPackets = true
-                // // };
-                // IProducer<AudioBuffer> audio = new AudioCapture(pipeline, audioConfig);
-
-                // var vad = new SystemVoiceActivityDetector(pipeline);
-                // ContinuousSpeechRecognizer(pipeline, azureSubscriptionKey, azureRegion);
-                // audio.PipeTo(vad);
-
-                // var recognizer = new AzureSpeechRecognizer(pipeline, new AzureSpeechRecognizerConfiguration()
-                // {
-                //     SubscriptionKey = Program.AzureSubscriptionKey,
-                //     Region = Program.AzureRegion
-                // });
-                // var annotatedAudio = audio.Join(vad);
-                // annotatedAudio.PipeTo(recognizer);
-
-                // var finalResults = recognizer.Out.Where(result => result.IsFinal);
-                // finalResults.Do(SendDialogToBazaar);
-
-                // =================== Speech-to-Text ==================
-
-                for (;true == true;) {
-                    SendHardCodedTextToBazaar("Hello World!");
-                    System.Threading.Thread.Sleep(5000);
-                }
-
-                // Todo: Add some data storage here
-                // var dataStore = Store.Create(pipeline, Program.AppName, Environment.GetFolderPath(Environment.SpecialFolder.MyVideos));
-
-                pipeline.RunAsync();
-                if (AudioOnly)
-                {
-                    Console.WriteLine("Running Smart Lab Project Demo v3.0 - Audio Only.");
-                }
-                else
-                {
-                    Console.WriteLine("Running Smart Lab Project Demo v3.0");
-                }
-                Console.WriteLine("Press any key to exit...");
-                Console.ReadKey(true);
-            }
-        }
-
-        // private static void FindAudioSource(KinectAudioBeamInfo audioInfo, Envelope envelope)
-        // {
-        //     // System.Threading.Thread.Sleep(1000);
-        //     AudioSourceFlag = false;
-        //     double angle = audioInfo.Angle;
-        //     // Line3D soundPlane = new Line3D(
-        //     //     KinectInfo.Cam2World(new Point3D(0, 0, 0)),
-        //     //     KinectInfo.Cam2World(new Point3D(Math.Cos(angle), 0, -Math.Sin(angle))) - KinectInfo.Cam2World(new Point3D(0, 0, 0))
-        //     // );
-        //     if (IdInfoList.Count > 0)
-        //     {
-        //         double nearestDis = 10000;
-        //         IdentityInfo nearestID = null;
-        //         lock (AudioSourceLock)
-        //         {
-        //             foreach (var kv in IdTail)
-        //             {
-        //                 var p = kv.Value;
-        //                 while (p.LastMatch != null)
-        //                 {
-        //                     if (p.LastMatch.Timestamp < envelope.OriginatingTime)
-        //                     {
-        //                         break;
-        //                     }
-        //                     p = p.LastMatch;
-        //                 }
-        //                 double dis = 100000;
-        //                 if (Math.Abs(p.Timestamp.Subtract(envelope.OriginatingTime).TotalSeconds) < 8)
-        //                 {
-        //                     double temp = Math.Abs((p.Position - soundPlane.p0) * soundPlane.t / soundPlane.t.Length());
-        //                     if (temp < dis)
-        //                     {
-        //                         dis = temp;
-        //                     }
-        //                 }
-        //                 if (p.LastMatch != null && Math.Abs(p.LastMatch.Timestamp.Subtract(envelope.OriginatingTime).TotalSeconds) < 8)
-        //                 {
-        //                     double temp = Math.Abs((p.LastMatch.Position - soundPlane.p0) * soundPlane.t / soundPlane.t.Length());
-        //                     if (temp < dis)
-        //                     {
-        //                         dis = temp;
-        //                     }
-        //                 }
-        //                 if (dis < nearestDis)
-        //                 {
-        //                     nearestID = p;
-        //                     nearestDis = dis;
-        //                 }
-        //             }
-        //             if (nearestID != null)
-        //             {
-        //                 // Console.WriteLine(angle);
-        //                 // Console.WriteLine($"{nearestID.TrueIdentity}: {nearestDis}");
-        //                 AudioSourceList.Add(nearestID.TrueIdentity);
-        //                 if (DateTime.Now.Subtract(LastNVBGTime).TotalSeconds > NVBGCooldownAudio)
-        //                 {
-        //                     Point3D pos2send = nearestID.Position;
-        //                     pos2send = VhtInfo.World2Cam(pos2send);
-        //                     Console.WriteLine($"Send location message to NVBG: multimodal:::true;%;identity:::{nearestID.TrueIdentity}(Detected: {nearestID.Identity});%;location:::{pos2send.x}:{pos2send.y}:{pos2send.z}");
-        //                     manager.SendText(TopicToNVBG, $"multimodal:::true;%;identity:::{nearestID.TrueIdentity};%;location:::{pos2send.x}:{pos2send.y}:{pos2send.z}");
-        //                     LastNVBGTime = DateTime.Now;
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-
-        // private static void AddNewMapper(CameraSpacePoint[] mapper, Envelope envelope)
-        // {
-        //     var time = envelope.OriginatingTime;
-        //     // KinectMappingBuffer.Add(time, mapper);
-        //     // while (KinectMappingBuffer.Last().Key.Subtract(KinectMappingBuffer.First().Key).TotalSeconds > 10)
-        //     // {
-        //     //     var rem_time = KinectMappingBuffer.First().Key;
-        //     //     KinectMappingBuffer.RemoveAt(0);
-        //     // }
-        // }
 
         private static void SendDialogToBazaar(IStreamingSpeechRecognitionResult result, Envelope envelope)
         {
