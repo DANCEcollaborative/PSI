@@ -115,12 +115,11 @@ namespace CMU.Smartlab.Communication
                 }
 
 
-                Console.WriteLine("responseSocket : Waiting for request");
-                // var message = responseSocket.ReceiveFrameString();
+                // Console.WriteLine("ResponseSocket -- Waiting for request");
 
                 var (message, originatingTime) = this.deserializer.DeserializeMessage(frames[1], 0, frames[1].Length);
-                Console.WriteLine("ResponseSocket : Server Received '{0}'", message);
-                Console.WriteLine("ResponseSocket Sending 'Hibackatcha!'");
+                // Console.WriteLine("ResponseSocket -- Received: '{0}'", message);
+                Console.WriteLine("ResponseSocket -- Sending:  Hibackatcha!");
                 socket.SendFrame("Hibackatcha!");
                 this.Out.Post(message, this.useSourceOriginatingTimes ? originatingTime : this.pipeline.GetCurrentTime());
             }

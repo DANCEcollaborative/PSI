@@ -424,12 +424,9 @@ namespace SigdialDemo
             using (var p = Pipeline.Create())
             {
                 var mq = new NetMQResponder<string>(p, "fake-topic", "@tcp://*:40001", JsonFormat.Instance); 
-                Console.WriteLine("responseSocket : Waiting for request");
-                mq.Do(x => Console.WriteLine($"Message: {x}"));
+                // Console.WriteLine("ResponseSocket -- Waiting for request");
+                mq.Do(x => Console.WriteLine($"ResponseSocket -- Received: {x}"));
                 p.Run();
-                // Console.WriteLine("responseSocket : Server Received '{0}'", message);
-                // Console.WriteLine("responseSocket Sending 'Hibackatcha!'");
-                // responseSocket.SendFrame("Hibackatcha!");
             }
         }
 
