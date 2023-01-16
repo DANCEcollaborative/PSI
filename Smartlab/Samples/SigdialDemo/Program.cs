@@ -113,7 +113,7 @@ namespace SigdialDemo
                     switch (key)
                     {
                         case ConsoleKey.D1:
-                            RunDemoWithRemote();
+                            RunDemoWithRemoteMultipart();
                             break;
                         // case ConsoleKey.Q:
                         //     exit = true;
@@ -419,6 +419,21 @@ namespace SigdialDemo
         }
 
         // ...
+        public static void RunDemoWithRemoteMultipart()
+        {
+            using (var p = Pipeline.Create())
+            {
+                var mq = new NetMQResponder<string>(p, "fake-topic", "@tcp://*:40001", JsonFormat.Instance); 
+                Console.WriteLine("responseSocket : Waiting for request");
+                mq.Do(x => Console.WriteLine($"Message: {x}"));
+                p.Run();
+                // Console.WriteLine("responseSocket : Server Received '{0}'", message);
+                // Console.WriteLine("responseSocket Sending 'Hibackatcha!'");
+                // responseSocket.SendFrame("Hibackatcha!");
+            }
+        }
+
+        // ...
         public static void RunDemoWithRemote()
         {
             using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
@@ -439,9 +454,11 @@ namespace SigdialDemo
         {
             using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
             using (var requestSocket = new RequestSocket(">tcp://localhost:40001"))
+            using (var p = Pipeline.Create())
             for (;;) 
             {
                 {
+                    var mq = new NetMQSource<string>(p, "test-topic", "tcp://localhost:45678", JsonFormat.Instance); 
                     Console.WriteLine("requestSocket : Sending 'Hello'");
                     requestSocket.SendFrame(">>>>> Hello from afar! <<<<<<");
                     var message = responseSocket.ReceiveFrameString();
