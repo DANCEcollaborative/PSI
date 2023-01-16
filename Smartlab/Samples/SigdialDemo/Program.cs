@@ -424,8 +424,7 @@ namespace SigdialDemo
             using (var p = Pipeline.Create())
             {
                 var mq = new NetMQResponder<string>(p, "fake-topic", "@tcp://*:40001", JsonFormat.Instance); 
-                // Console.WriteLine("ResponseSocket -- Waiting for request");
-                mq.Do(x => Console.WriteLine($"ResponseSocket -- Received: {x}"));
+                mq.Do(x => Console.WriteLine($"ResponseSocket -- Waiting for request"));
                 p.Run();
             }
         }

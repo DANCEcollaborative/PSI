@@ -114,11 +114,8 @@ namespace CMU.Smartlab.Communication
                     throw new Exception($"Multiple interleaved messages received on topic: {this.topic}. Is the sender on the other side sending messages on multiple threads? You may need to add a lock over there.");
                 }
 
-
-                // Console.WriteLine("ResponseSocket -- Waiting for request");
-
                 var (message, originatingTime) = this.deserializer.DeserializeMessage(frames[1], 0, frames[1].Length);
-                // Console.WriteLine("ResponseSocket -- Received: '{0}'", message);
+                Console.WriteLine("ResponseSocket -- Received: {0}", message);
                 Console.WriteLine("ResponseSocket -- Sending:  Hibackatcha!");
                 socket.SendFrame("Hibackatcha!");
                 this.Out.Post(message, this.useSourceOriginatingTimes ? originatingTime : this.pipeline.GetCurrentTime());
