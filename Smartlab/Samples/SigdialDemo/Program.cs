@@ -115,9 +115,9 @@ namespace SigdialDemo
                         case ConsoleKey.D1:
                             RunDemoWithRemoteMultipart();
                             break;
-                        // case ConsoleKey.Q:
-                        //     exit = true;
-                        //     break;
+                            // case ConsoleKey.Q:
+                            //     exit = true;
+                            //     break;
                     }
                 }
             }
@@ -419,31 +419,41 @@ namespace SigdialDemo
         }
 
         // ...
+        public static void PrintExpandoObject(dynamic dynamicObject)
+        {
+            var dynamicDictionary = dynamicObject as IDictionary<string, object>;
+
+            foreach (KeyValuePair<string, object> property in dynamicDictionary)
+            {
+                Console.WriteLine("{0}: {1}", property.Key, property.Value.ToString());
+            }
+            Console.WriteLine();
+        }
         public static void RunDemoWithRemoteMultipart()
         {
             using (var p = Pipeline.Create())
             {
-                var mq = new NetMQResponder<string>(p, "fake-topic", "@tcp://*:40001", JsonFormat.Instance); 
-                mq.Do(x => Console.WriteLine($"ResponseSocket -- Waiting for request"));
+                var mq = new NetMQResponder<dynamic>(p, "fake-topic", "@tcp://*:40001", MessagePackFormat.Instance);
+                mq.Do(x => { Console.WriteLine($"ResponseSocket -- Waiting for request2 - {x.poses[0]} - {x.keypoints.Length}"); PrintExpandoObject(x); });
                 p.Run();
             }
         }
 
         // ...
-        public static void RunDemoWithRemote()
-        {
-            using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
-            {
-                for (;;) 
-                {
-                    Console.WriteLine("responseSocket : Waiting for request");
-                    var message = responseSocket.ReceiveFrameString();
-                    Console.WriteLine("responseSocket : Server Received '{0}'", message);
-                    Console.WriteLine("responseSocket Sending 'Hibackatcha!'");
-                    responseSocket.SendFrame("Hibackatcha!");
-                }
-            }
-        }
+        // public static void RunDemoWithRemote()
+        // {
+        //     using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
+        //     {
+        //         for (;;) 
+        //         {
+        //             Console.WriteLine("responseSocket : Waiting for request");
+        //             var message = responseSocket.ReceiveFrameString();
+        //             Console.WriteLine("responseSocket : Server Received '{0}'", message);
+        //             Console.WriteLine("responseSocket Sending 'Hibackatcha!'");
+        //             responseSocket.SendFrame("Hibackatcha!");
+        //         }
+        //     }
+        // }
 
         // Works sending to itself locally
         public static void RunDemoWithLocal()
@@ -451,22 +461,22 @@ namespace SigdialDemo
             using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
             using (var requestSocket = new RequestSocket(">tcp://localhost:40001"))
             using (var p = Pipeline.Create())
-            for (;;) 
-            {
+                for (; ; )
                 {
-                    var mq = new NetMQSource<string>(p, "test-topic", "tcp://localhost:45678", JsonFormat.Instance); 
-                    Console.WriteLine("requestSocket : Sending 'Hello'");
-                    requestSocket.SendFrame(">>>>> Hello from afar! <<<<<<");
-                    var message = responseSocket.ReceiveFrameString();
-                    Console.WriteLine("responseSocket : Server Received '{0}'", message);
-                    Console.WriteLine("responseSocket Sending 'Hibackatcha!'");
-                    responseSocket.SendFrame("Hibackatcha!");
-                    message = requestSocket.ReceiveFrameString();
-                    Console.WriteLine("requestSocket : Received '{0}'", message);
-                    Console.ReadLine();
-                    Thread.Sleep(1000);
+                    {
+                        var mq = new NetMQSource<string>(p, "test-topic", "tcp://localhost:45678", JsonFormat.Instance);
+                        Console.WriteLine("requestSocket : Sending 'Hello'");
+                        requestSocket.SendFrame(">>>>> Hello from afar! <<<<<<");
+                        var message = responseSocket.ReceiveFrameString();
+                        Console.WriteLine("responseSocket : Server Received '{0}'", message);
+                        Console.WriteLine("responseSocket Sending 'Hibackatcha!'");
+                        responseSocket.SendFrame("Hibackatcha!");
+                        message = requestSocket.ReceiveFrameString();
+                        Console.WriteLine("requestSocket : Received '{0}'", message);
+                        Console.ReadLine();
+                        Thread.Sleep(1000);
+                    }
                 }
-            }
         }
 
 
@@ -488,25 +498,27 @@ namespace SigdialDemo
             String topicReceived;
             String received;
 
-            using (var subSocket = new SubscriberSocket()) 
+            using (var subSocket = new SubscriberSocket())
             {
                 subSocket.Options.ReceiveHighWatermark = 1000;
                 subSocket.Bind(address);
-                String topic = "15218"; 
+                String topic = "15218";
                 subSocket.Subscribe(topic);
                 Thread.Sleep(100);
-                for (;;) {
-                    Console.WriteLine( "About to try subSocket.ReceiveFrameString");
-                    topicReceived = subSocket.ReceiveFrameString(); 
-                    received = subSocket.ReceiveFrameString(); 
+                for (; ; )
+                {
+                    Console.WriteLine("About to try subSocket.ReceiveFrameString");
+                    topicReceived = subSocket.ReceiveFrameString();
+                    received = subSocket.ReceiveFrameString();
                     Console.WriteLine("topicReceived: " + topicReceived);
                     Console.WriteLine("received: " + received);
-                    if  (received == "") {
-                        Console.WriteLine( "Received nothing");
-                        continue; 
+                    if (received == "")
+                    {
+                        Console.WriteLine("Received nothing");
+                        continue;
                     }
-                    Console.WriteLine( "Received something");
-                    break; 
+                    Console.WriteLine("Received something");
+                    break;
                 }
             }
         }
@@ -518,27 +530,30 @@ namespace SigdialDemo
             subSocket.Options.ReceiveHighWatermark = 1000;
             string address = "tcp://127.0.0.1:40001";
             subSocket.Bind(address);
-            String topic = "15218"; 
+            String topic = "15218";
             subSocket.Subscribe(topic);
             Thread.Sleep(100);
             String topicReceived;
             String received;
 
-            for (;;) {
-                for (;;) {
-                    Console.WriteLine( "About to try subSocket.ReceiveFrameString");
-                    topicReceived = subSocket.ReceiveFrameString(); 
-                    received = subSocket.ReceiveFrameString(); 
+            for (; ; )
+            {
+                for (; ; )
+                {
+                    Console.WriteLine("About to try subSocket.ReceiveFrameString");
+                    topicReceived = subSocket.ReceiveFrameString();
+                    received = subSocket.ReceiveFrameString();
                     Console.WriteLine("topicReceived: " + topicReceived);
                     Console.WriteLine("received: " + received);
-                    if  (received == "") {
-                        Console.WriteLine( "Received nothing");
-                        continue; 
+                    if (received == "")
+                    {
+                        Console.WriteLine("Received nothing");
+                        continue;
                     }
-                    Console.WriteLine( "Received something");
-                    break; 
+                    Console.WriteLine("Received something");
+                    break;
                 }
-                Console.WriteLine("Received: " + received );
+                Console.WriteLine("Received: " + received);
                 Thread.Sleep(2000);
             }
 
@@ -554,19 +569,23 @@ namespace SigdialDemo
             subSocket.Bind(address);
             Thread.Sleep(100);
             subSocket.SubscribeToAnyTopic();
-            String message = "NOTHING"; 
+            String message = "NOTHING";
 
-            for (;;) {
+            for (; ; )
+            {
                 Thread.Sleep(4000);
-                Console.WriteLine( "About to try subSocket.TryReceiveFrameString");
-                var received = subSocket.TryReceiveFrameString(TimeSpan.FromMilliseconds(1000), out message); 
-                Console.WriteLine( "Received raw: " + message);
-                if  (! received) {
-                    Console.WriteLine( "Received nothing");
-                    continue; 
-                } else {
-                    Console.WriteLine( "Received: " + message);
-                } 
+                Console.WriteLine("About to try subSocket.TryReceiveFrameString");
+                var received = subSocket.TryReceiveFrameString(TimeSpan.FromMilliseconds(1000), out message);
+                Console.WriteLine("Received raw: " + message);
+                if (!received)
+                {
+                    Console.WriteLine("Received nothing");
+                    continue;
+                }
+                else
+                {
+                    Console.WriteLine("Received: " + message);
+                }
             }
         }
 
@@ -577,7 +596,7 @@ namespace SigdialDemo
             string address = "tcp://127.0.0.1:40001";
             var pubSocket = new PublisherSocket();
             pubSocket.Options.SendHighWatermark = 1000;
-            pubSocket.Bind(address); 
+            pubSocket.Bind(address);
             var subSocket = new SubscriberSocket();
             subSocket.Connect(address);
             Thread.Sleep(100);
@@ -585,19 +604,22 @@ namespace SigdialDemo
             String received = "";
 
             // Testing send & receive over same socket
-            for (;;) {
-                for (;;) {
-                    pubSocket.SendFrame( "Howdy from NetMQ!", false );
-                    Console.WriteLine( "About to try subSocket.ReceiveFrameString");
-                    received = subSocket.ReceiveFrameString(); 
-                    if  (received == "") {
-                        Console.WriteLine( "Received nothing");
-                        continue; 
+            for (; ; )
+            {
+                for (; ; )
+                {
+                    pubSocket.SendFrame("Howdy from NetMQ!", false);
+                    Console.WriteLine("About to try subSocket.ReceiveFrameString");
+                    received = subSocket.ReceiveFrameString();
+                    if (received == "")
+                    {
+                        Console.WriteLine("Received nothing");
+                        continue;
                     }
-                    Console.WriteLine( "Received something");
-                    break; 
+                    Console.WriteLine("Received something");
+                    break;
                 }
-                Console.WriteLine( received );
+                Console.WriteLine(received);
                 Thread.Sleep(2000);
             }
         }
@@ -640,14 +662,14 @@ namespace SigdialDemo
                         // Console.WriteLine("Sending message to Bazaar through NetMQ: {0}", messageToBazaar);
                         // netmqpublisher = new NetMqPublisher(TcpIPPublisher);
                         // netmqpublisher.Publish("TcpToBazaar", messageToBazaar);
-                    /*    using (var pubSocket = new PublisherSocket())
-                        {
-                            pubSocket.Options.SendHighWatermark = 1000;
-                            pubSocket.Bind(TcpIPPublisher);
-                            Console.WriteLine("Sending message to Bazaar : {0}", messageToBazaar);
-                            pubSocket.SendMoreFrame("TcpToBazaar").SendFrame(messageToBazaar);
-                        }*/
-                        
+                        /*    using (var pubSocket = new PublisherSocket())
+                            {
+                                pubSocket.Options.SendHighWatermark = 1000;
+                                pubSocket.Bind(TcpIPPublisher);
+                                Console.WriteLine("Sending message to Bazaar : {0}", messageToBazaar);
+                                pubSocket.SendMoreFrame("TcpToBazaar").SendFrame(messageToBazaar);
+                            }*/
+
                         manager.SendText(TopicToBazaar, messageToBazaar);
                         manager.SendText(TopicToMacaw, result.Text);
                         return;
@@ -677,13 +699,13 @@ namespace SigdialDemo
                     // Console.WriteLine("Sending message to Bazaar through NetMQ: {0}", messageToBazaar);
                     // netmqpublisher = new NetMqPublisher(TcpIPPublisher);
                     // netmqpublisher.Publish("TcpToBazaar", messageToBazaar);
-                   /* using (var pubSocket = new PublisherSocket())
-                    {
-                        pubSocket.Options.SendHighWatermark = 1000;
-                        pubSocket.Bind(TcpIPPublisher);
-                        Console.WriteLine("Sending message to Bazaar : {0}", messageToBazaar);
-                        pubSocket.SendMoreFrame("TcpToBazaar").SendFrame(messageToBazaar);
-                    }*/
+                    /* using (var pubSocket = new PublisherSocket())
+                     {
+                         pubSocket.Options.SendHighWatermark = 1000;
+                         pubSocket.Bind(TcpIPPublisher);
+                         Console.WriteLine("Sending message to Bazaar : {0}", messageToBazaar);
+                         pubSocket.SendMoreFrame("TcpToBazaar").SendFrame(messageToBazaar);
+                     }*/
                     Console.WriteLine($"Please open the Realmodal first!.Send fake text message to Bazaar: {messageToBazaar}");
                     manager.SendText(TopicToBazaar, messageToBazaar);
                     manager.SendText(TopicToMacaw, result.Text);
@@ -731,14 +753,14 @@ namespace SigdialDemo
                         // Console.WriteLine("Sending message to Bazaar through NetMQ: {0}", messageToBazaar);
                         // netmqpublisher = new NetMqPublisher(TcpIPPublisher);
                         // netmqpublisher.Publish("TcpToBazaar", messageToBazaar);
-                    /*    using (var pubSocket = new PublisherSocket())
-                        {
-                            pubSocket.Options.SendHighWatermark = 1000;
-                            pubSocket.Bind(TcpIPPublisher);
-                            Console.WriteLine("Sending message to Bazaar : {0}", messageToBazaar);
-                            pubSocket.SendMoreFrame("TcpToBazaar").SendFrame(messageToBazaar);
-                        }*/
-                        
+                        /*    using (var pubSocket = new PublisherSocket())
+                            {
+                                pubSocket.Options.SendHighWatermark = 1000;
+                                pubSocket.Bind(TcpIPPublisher);
+                                Console.WriteLine("Sending message to Bazaar : {0}", messageToBazaar);
+                                pubSocket.SendMoreFrame("TcpToBazaar").SendFrame(messageToBazaar);
+                            }*/
+
                         manager.SendText(TopicToBazaar, messageToBazaar);
                         manager.SendText(TopicToMacaw, speech);
                         return;
@@ -768,13 +790,13 @@ namespace SigdialDemo
                     // Console.WriteLine("Sending message to Bazaar through NetMQ: {0}", messageToBazaar);
                     // netmqpublisher = new NetMqPublisher(TcpIPPublisher);
                     // netmqpublisher.Publish("TcpToBazaar", messageToBazaar);
-                   /* using (var pubSocket = new PublisherSocket())
-                    {
-                        pubSocket.Options.SendHighWatermark = 1000;
-                        pubSocket.Bind(TcpIPPublisher);
-                        Console.WriteLine("Sending message to Bazaar : {0}", messageToBazaar);
-                        pubSocket.SendMoreFrame("TcpToBazaar").SendFrame(messageToBazaar);
-                    }*/
+                    /* using (var pubSocket = new PublisherSocket())
+                     {
+                         pubSocket.Options.SendHighWatermark = 1000;
+                         pubSocket.Bind(TcpIPPublisher);
+                         Console.WriteLine("Sending message to Bazaar : {0}", messageToBazaar);
+                         pubSocket.SendMoreFrame("TcpToBazaar").SendFrame(messageToBazaar);
+                     }*/
                     Console.WriteLine($"Please open the Realmodal first!.Send fake text message to Bazaar: {messageToBazaar}");
                     manager.SendText(TopicToBazaar, messageToBazaar);
                     manager.SendText(TopicToMacaw, speech);
