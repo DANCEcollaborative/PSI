@@ -268,3 +268,4 @@ paket-files/
 /_site/
 /.sass-cache/
 Gemfile.lock
+client-env/
