@@ -433,8 +433,19 @@ namespace SigdialDemo
         {
             using (var p = Pipeline.Create())
             {
-                var mq = new NetMQResponder<dynamic>(p, "fake-topic", "@tcp://*:40001", MessagePackFormat.Instance);
-                mq.Do(x => { Console.WriteLine($"ResponseSocket -- Waiting for request2 - {x.poses[0]} - {x.keypoints.Length}"); PrintExpandoObject(x); });
+                var input_sock = new NetMQResponder<dynamic>(p, "fake-topic", "@tcp://*:40002", MessagePackFormat.Instance);
+                input_sock.Do(x => { Console.WriteLine($"ResponseSocket -- Waiting for request2 - {x.Length} - {x[0]}");  });
+
+                var output_sock = new NetMQWriter<int>(
+                p,
+                "face-orientation",
+                "tcp://*:30002",
+                MessagePackFormat.Instance);
+
+                int ctr = -1;
+                var seq = Timers.Timer(p, TimeSpan.FromSeconds(1)).Select((t, e)=>{ctr = (ctr + 1) % 6; return ctr;});
+                seq.PipeTo(output_sock);
+                
                 p.Run();
             }
         }
