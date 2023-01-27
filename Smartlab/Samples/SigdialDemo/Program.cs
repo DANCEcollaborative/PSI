@@ -51,6 +51,12 @@ namespace SigdialDemo
         private const string TopicToVHText = "PSI_VHT_Text";
         private const string TopicFromPython = "Python_PSI_Location";
         private const string TopicFromBazaar = "Bazaar_PSI_Text";
+
+        private const string TopicFromNano = "fake-topic";
+        private const string TopicToFrontend = "face-orientation";
+
+        private const string URIFromNano = "@tcp://*:40002";
+        private const string URIToFrontEnd = "tcp://*:30002";
         // private const string TopicFromPython_QueryKinect = "Python_PSI_QueryKinect";
         // private const string TopicToPython_AnswerKinect = "PSI_Python_AnswerKinect";
 
@@ -433,19 +439,31 @@ namespace SigdialDemo
         {
             using (var p = Pipeline.Create())
             {
-                var input_sock = new NetMQResponder<dynamic>(p, "fake-topic", "@tcp://*:40002", MessagePackFormat.Instance);
+                var input_sock = new NetMQResponder<dynamic>(p, TopicFromNano, URIFromNano, MessagePackFormat.Instance);
                 input_sock.Do(x => { Console.WriteLine($"ResponseSocket -- Waiting for request2 - {x.Length} - {x[0]}");  });
 
-                var output_sock = new NetMQWriter<int>(
+                var output_sock = new NetMQWriter<string>(
                 p,
-                "face-orientation",
-                "tcp://*:30002",
+                TopicToFrontend,
+                URIToFrontEnd,
                 MessagePackFormat.Instance);
 
                 int ctr = -1;
-                var seq = Timers.Timer(p, TimeSpan.FromSeconds(1)).Select((t, e)=>{ctr = (ctr + 1) % 6; return ctr;});
+                var seq = Timers.Timer(p, TimeSpan.FromSeconds(1)).Select((t, e)=>{
+                    ctr = (ctr + 1) % 6; 
+                    string message = "";
+                    switch(ctr) {
+                        case 0:
+                        case 3: message = "Rachel is looking left"; break;
+                        case 1:
+                        case 4: message = "Rachel is looking straight ahead"; break;
+                        case 2:
+                        case 5: message = "Rachel is looking right"; break;
+                    }
+                    string s = $"{{\"flag\":{ctr}, \"message\":\"{message}\"}}";
+                    return s;
+                });
                 seq.PipeTo(output_sock);
-                
                 p.Run();
             }
         }
