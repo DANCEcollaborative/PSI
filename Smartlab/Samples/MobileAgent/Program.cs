@@ -35,6 +35,7 @@ using Apache.NMS.ActiveMQ.Transport.Discovery;
 using Rectangle = System.Drawing.Rectangle;
 using NetMQ;
 using NetMQ.Sockets;
+using MergeString; 
 // using NetMQSource;
 // using ZeroMQ; 
 // using Operators; 
@@ -176,7 +177,7 @@ namespace SigdialDemo
                 var amqSubBazaarToAgent = new AMQSubscriber<string>(p, TopicFromBazaar, TopicToAgent, "Bazaar to Agent"); 
 
                 // Create a publisher for messages to the agent using NetMQ (ZeroMQ)
-                var nmqPubToAgent = new NetMQPublisher<string>(p, TopicToAgent, TcpIPPublisher, JsonFormat.Instance);
+                var nmqPubToAgent = new NetMQMessagePublisher<Message>(p, TopicToAgent, TcpIPPublisher, JsonFormat.Instance);
                 // nmqPubToAgent.Do(x => Console.WriteLine("RunDemoWithRemoteMultipart, nmqPubToAgent.Do: {0}", x));
 
                 // Route messages from the sensor to Bazaar
@@ -259,6 +260,7 @@ namespace SigdialDemo
                 // pipe merged output to ConsoleOutput
                 // merger.Select(m => m.Item2.Data).PipeTo(nmqPubToAgent);
 
+                // MergeString<string> mergeToAgent = new MergeString<string>(p,"Merge to Agent"); 
                 Merge<string> mergeToAgent = new Merge<string>(p,"Merge to Agent"); 
                 mergeToAgent.AddInput("Sensor to PSI"); 
                 mergeToAgent.AddInput("Bazaar to Agent"); 
