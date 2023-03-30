@@ -70,8 +70,11 @@ namespace SigdialDemo
         private const double NVBGCooldownLocation = 8.0;
         private const double NVBGCooldownAudio = 3.0;
 
-        private static string AzureSubscriptionKey = "abee363f8d89444998c5f35b6365ca38";
-        private static string AzureRegion = "eastus";
+        private static Boolean useAzure = false; 
+        private static string AzureSubscriptionKey;
+        private static string AzureRegion;
+        // private static string AzureRegion = "eastus";
+        // private static string AzureSubscriptionKey = "abee363f8d89444998c5f35b6365ca38";
         public static readonly object SendToBazaarLock = new object();
         public static readonly object SendToPythonLock = new object();
         public static readonly object LocationLock = new object();
@@ -89,7 +92,6 @@ namespace SigdialDemo
         public static List<String> AudioSourceList;
         public static CameraInfo VhtInfo;
         // private readonly Merger<Message<string>, int> merger;
-
         public static String remoteIP; 
 
         public static void Main(string[] args)
@@ -102,13 +104,19 @@ namespace SigdialDemo
                 {
                     SetConsole();
                     Console.WriteLine("############################################################################");
-                    Console.WriteLine("1) Respond to requests from remote device. Then press any key to quit.");
+                    Console.WriteLine("1) Mobile device."); 
+                    Console.WriteLine("2) Mobile device with Azure speech recognition."); 
                     Console.WriteLine("Q) Quit.");
+                    Console.WriteLine("Press any key to exit."); 
                     ConsoleKey key = Console.ReadKey().Key;
                     Console.WriteLine();
                     switch (key)
                     {
                         case ConsoleKey.D1:
+                            RunDemo();
+                            break;
+                        case ConsoleKey.D2:
+                            useAzure = true; 
                             RunDemo();
                             break;
                         case ConsoleKey.Q:
@@ -158,6 +166,13 @@ namespace SigdialDemo
         {
             String remoteIP; 
             // String localIP = "tcp://127.0.0.1:40003";
+
+            if (useAzure) {
+                if (!GetAzureSubscriptionKey()) {
+                    Console.WriteLine("Azure subscription key and region are required. Ending.");
+                    return; 
+                }
+            }
 
             using (var responseSocket = new ResponseSocket("@tcp://*:40001")) {
                 var message = responseSocket.ReceiveFrameString();
@@ -302,10 +317,10 @@ namespace SigdialDemo
             Console.WriteLine(e.Exception);
         }
 
-        private static bool GetSubscriptionKey()
+        private static bool GetAzureSubscriptionKey()
         {
-            Console.WriteLine("A cognitive services Azure Speech subscription key is required to use this. For more info, see 'https://docs.microsoft.com/en-us/azure/cognitive-services/cognitive-services-apis-create-account'");
-            Console.Write("Enter subscription key");
+            // Console.WriteLine("A cognitive services Azure Speech subscription key is required. For more info, see 'https://docs.microsoft.com/en-us/azure/cognitive-services/cognitive-services-apis-create-account'");
+            Console.Write("Enter Azure subscription key: ");
             Console.Write(string.IsNullOrWhiteSpace(Program.AzureSubscriptionKey) ? ": " : string.Format(" (current = {0}): ", Program.AzureSubscriptionKey));
 
             // Read a new key or hit enter to keep using the current one (if any)
@@ -315,7 +330,7 @@ namespace SigdialDemo
                 Program.AzureSubscriptionKey = response;
             }
 
-            Console.Write("Enter region");
+            Console.Write("Enter Azure region (e.g., 'eastus'): ");
             Console.Write(string.IsNullOrWhiteSpace(Program.AzureRegion) ? ": " : string.Format(" (current = {0}): ", Program.AzureRegion));
 
             // Read a new key or hit enter to keep using the current one (if any)
