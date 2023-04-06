@@ -190,8 +190,6 @@ namespace SigdialDemo
             {
                 if (useAudio) {
 
-                    var acousticFeaturesExtractor = new AcousticFeaturesExtractor(pipeline);
-
                     var audioConfig = new AudioCaptureConfiguration()
                     {
                         // OutputFormat = WaveFormat.Create16kHz1Channel16BitPcm(),
@@ -217,6 +215,8 @@ namespace SigdialDemo
                     // finalResults.Do(Console.WriteLine("Speech: '{0}'", finalResults.text));
 
 
+                    var acousticFeaturesExtractor = new AcousticFeaturesExtractor(pipeline);
+
                     // Display the log energy
                     acousticFeaturesExtractor.LogEnergy
                         .Sample(TimeSpan.FromSeconds(0.2))
@@ -226,6 +226,18 @@ namespace SigdialDemo
                     var vad = acousticFeaturesExtractor.LogEnergy
                         .Select(l => l > 7);
 
+                    // Create filtered signal by aggregating over historical buffers
+                    var vadWithHistory = acousticFeaturesExtractor.LogEnergy
+                        .Window(RelativeTimeInterval.Future(TimeSpan.FromMilliseconds(300)))
+                        .Aggregate(false, (previous, buffer) => (!previous && buffer.All(v => v > 7)) || (previous && !buffer.All(v => v < 7)));
+
+                    // Write the microphone output, VAD streams, and some acoustic features to the store
+                    var store = PsiStore.Create(pipeline, "SimpleVAD", Path.Combine(Directory.GetCurrentDirectory(), "Stores"));
+                    // microphone.Write("Audio", store);
+                    vad.Write("VAD", store);
+                    vadWithHistory.Write("VADFiltered", store);
+                    acousticFeaturesExtractor.LogEnergy.Write("LogEnergy", store);
+                    acousticFeaturesExtractor.ZeroCrossingRate.Write("ZeroCrossingRate", store);
 
                 }
 
