@@ -7,6 +7,7 @@ using CMU.Smartlab.Communication;
 using CMU.Smartlab.Identity;
 using CMU.Smartlab.Rtsp;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -188,6 +189,9 @@ namespace SigdialDemo
             using (var pipeline = Pipeline.Create())
             {
                 if (useAudio) {
+
+                    var acousticFeaturesExtractor = new AcousticFeaturesExtractor(pipeline);
+
                     var audioConfig = new AudioCaptureConfiguration()
                     {
                         // OutputFormat = WaveFormat.Create16kHz1Channel16BitPcm(),
@@ -211,6 +215,17 @@ namespace SigdialDemo
                     // var finalResults = recognizer.Out.Where(result => result.IsFinal);
                     // finalResults.Do(SendDialogToBazaar);
                     // finalResults.Do(Console.WriteLine("Speech: '{0}'", finalResults.text));
+
+
+                    // Display the log energy
+                    acousticFeaturesExtractor.LogEnergy
+                        .Sample(TimeSpan.FromSeconds(0.2))
+                        .Do(logEnergy => Console.WriteLine($"LogEnergy = {logEnergy}"));
+
+                    // Create a voice-activity stream by thresholding the log energy
+                    var vad = acousticFeaturesExtractor.LogEnergy
+                        .Select(l => l > 7);
+
 
                 }
 
