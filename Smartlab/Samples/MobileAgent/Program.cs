@@ -5,7 +5,7 @@
 
 using CMU.Smartlab.Communication;
 using CMU.Smartlab.Identity;
-// using CMU.Smartlab.Rtsp;
+using CMU.Smartlab.Rtsp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -69,7 +69,7 @@ namespace SigdialDemo
         private const double DistanceWarningCooldown = 30.0;
         private const double NVBGCooldownLocation = 8.0;
         private const double NVBGCooldownAudio = 3.0;
-
+        private static Boolean useAudio = false; 
         private static Boolean useAzure = false; 
         private static string AzureSubscriptionKey;
         private static string AzureRegion;
@@ -113,11 +113,13 @@ namespace SigdialDemo
                     switch (key)
                     {
                         case ConsoleKey.D1:
-                            RunDemo();
+                            RunDemo("Nano_Text");
                             break;
                         case ConsoleKey.D2:
+                            useAudio = true; 
                             useAzure = true; 
-                            RunDemo();
+                            RunDemo("Nano_Audio");
+                            // RunDemo();
                             break;
                         case ConsoleKey.Q:
                             exit = true;
@@ -162,7 +164,7 @@ namespace SigdialDemo
         }
  
         // ...
-        public static void RunDemo()
+        public static void RunDemo(string inputType)
         {
             String remoteIP; 
             // String localIP = "tcp://127.0.0.1:40003";
@@ -183,28 +185,67 @@ namespace SigdialDemo
             }
             Thread.Sleep(1000); 
 
-            using (var p = Pipeline.Create())
+            using (var pipeline = Pipeline.Create())
             {
+                if (useAudio) {
+                    var audioConfig = new AudioCaptureConfiguration()
+                    {
+                        // OutputFormat = WaveFormat.Create16kHz1Channel16BitPcm(),
+                        // DropOutOfOrderPackets = true
+                    };
+                    IProducer<AudioBuffer> audio = new AudioCapture(pipeline, audioConfig);
+
+                    // var vad = new SystemVoiceActivityDetector(pipeline);
+                    // audio.PipeTo(vad);
+
+                    if (useAzure) {
+                        var recognizer = new AzureSpeechRecognizer(pipeline, new AzureSpeechRecognizerConfiguration()
+                        {
+                            SubscriptionKey = Program.AzureSubscriptionKey,
+                            Region = Program.AzureRegion
+                        });
+                    }
+                    // var annotatedAudio = audio.Join(vad);
+                    // annotatedAudio.PipeTo(recognizer);
+
+                    // var finalResults = recognizer.Out.Where(result => result.IsFinal);
+                    // finalResults.Do(SendDialogToBazaar);
+                    // finalResults.Do(Console.WriteLine("Speech: '{0}'", finalResults.text));
+
+                }
+
+                if (inputType == "Nano_Audio") {
+
+                    // Hardcoded for now as Lorex camera on back wall of SOS
+                    var serverUriPSIb = new Uri("rtsp://lorex5416b1.pc.cs.cmu.edu");
+                    var credentialsPSIb = new NetworkCredential("admin", "54Lorex16");
+                    RtspCapture rtspPSIb = new RtspCapture(pipeline, serverUriPSIb, credentialsPSIb, true);
+                    // EncodedImageSendHelper helper = new EncodedImageSendHelper(manager, "webcam", Program.TopicToPython, Program.SendToPythonLock, Program.MaxSendingFrameRate);
+                    // var scaled = rtspPSIb.Out.Resize((float)Program.SendingImageWidth, Program.SendingImageWidth / 1280.0f * 720.0f);
+                    // var encoded = scaled.EncodeJpeg(90, DeliveryPolicy.LatestMessage).Out;
+                    // encoded.Do(helper.SendImage);
+                }
+
                 // Subscribe to messages from remote sensor using NetMQ (ZeroMQ)
-                // var nmqSubFromSensor = new NetMQSubscriber<string>(p, "", remoteIP, MessagePackFormat.Instance, useSourceOriginatingTimes = true, name="Sensor to PSI");
-                // var nmqSubFromSensor = new NetMQSubscriber<string>(p, "", remoteIP, JsonFormat.Instance, true, "Sensor to PSI");
-                var nmqSubFromSensor = new NetMQSubscriber<IDictionary<string,object>>(p, "", remoteIP, MessagePackFormat.Instance, true, "Sensor to PSI");
+                // var nmqSubFromSensor = new NetMQSubscriber<string>(pipeline, "", remoteIP, MessagePackFormat.Instance, useSourceOriginatingTimes = true, name="Sensor to PSI");
+                // var nmqSubFromSensor = new NetMQSubscriber<string>(pipeline, "", remoteIP, JsonFormat.Instance, true, "Sensor to PSI");
+                var nmqSubFromSensor = new NetMQSubscriber<IDictionary<string,object>>(pipeline, "", remoteIP, MessagePackFormat.Instance, true, "Sensor to PSI");
 
                 // Create a publisher for messages from the sensor to Bazaar
-                var amqPubSensorToBazaar = new AMQPublisher<IDictionary<string,object>>(p, TopicFromSensor, TopicToBazaar, "Sensor to Bazaar"); 
+                var amqPubSensorToBazaar = new AMQPublisher<IDictionary<string,object>>(pipeline, TopicFromSensor, TopicToBazaar, "Sensor to Bazaar"); 
 
                 // Subscribe to messages from Bazaar for the agent
-                var amqSubBazaarToAgent = new AMQSubscriber<IDictionary<string,object>>(p, TopicFromBazaar, TopicToAgent, "Bazaar to Agent"); 
+                var amqSubBazaarToAgent = new AMQSubscriber<IDictionary<string,object>>(pipeline, TopicFromBazaar, TopicToAgent, "Bazaar to Agent"); 
 
                 // Create a publisher for messages to the agent using NetMQ (ZeroMQ)
-                var nmqPubToAgent = new NetMQPublisher<IDictionary<string,object>>(p, TopicFaceOrientation, TcpIPPublisher, MessagePackFormat.Instance);
+                var nmqPubToAgent = new NetMQPublisher<IDictionary<string,object>>(pipeline, TopicFaceOrientation, TcpIPPublisher, MessagePackFormat.Instance);
                 // nmqPubToAgent.Do(x => Console.WriteLine("RunDemoWithRemoteMultipart, nmqPubToAgent.Do: {0}", x));
 
                 // Route messages from the sensor to Bazaar
                 nmqSubFromSensor.PipeTo(amqPubSensorToBazaar.IDictionaryIn); 
 
                 // Combine messages (1) direct from sensor, and (2) from Bazaar, and send to agent
-                SmartlabMerge<IDictionary<string,object>> mergeToAgent = new SmartlabMerge<IDictionary<string,object>>(p,"Merge to Agent"); 
+                SmartlabMerge<IDictionary<string,object>> mergeToAgent = new SmartlabMerge<IDictionary<string,object>>(pipeline,"Merge to Agent"); 
                 var receiverSensor = mergeToAgent.AddInput("Sensor to PSI"); 
                 var receiverBazaar = mergeToAgent.AddInput("Bazaar to Agent"); 
                 nmqSubFromSensor.PipeTo(receiverSensor); 
@@ -212,7 +253,7 @@ namespace SigdialDemo
                 // mergeToAgent.Select(m => m.Data).PipeTo(nmqPubToAgent); 
                 mergeToAgent.PipeTo(nmqPubToAgent); 
 
-                p.RunAsync();
+                pipeline.RunAsync();
 
                 Console.WriteLine("Press any key to exit...");
                 Console.ReadKey(true); 

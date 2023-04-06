@@ -69,16 +69,17 @@ namespace CMU.Smartlab.Rtsp
         {
             this.configuration = new MediaCaptureConfiguration()
             {
-                UseInSharedMode = useInSharedMode,
-                CaptureAudio = captureAudio,
+                // UseInSharedMode = useInSharedMode,
+                // CaptureAudio = captureAudio,
             };
             this.uri = uri;
             this.credential = credential;
-            if (this.configuration.CaptureAudio)
-            {
-                // this.audio = new Audio.AudioCapture(pipeline, new Audio.AudioCaptureConfiguration() { OutputFormat = Psi.Audio.WaveFormat.Create16kHz1Channel16BitPcm() });
-                this.Audio = pipeline.CreateEmitter<AudioBuffer>(this, nameof(this.Audio));
-            }
+            // if (this.configuration.CaptureAudio)
+            // {
+            //     // this.audio = new Audio.AudioCapture(pipeline, new Audio.AudioCaptureConfiguration() { OutputFormat = Psi.Audio.WaveFormat.Create16kHz1Channel16BitPcm() });
+            //     this.Audio = pipeline.CreateEmitter<AudioBuffer>(this, nameof(this.Audio));
+            // }
+            this.Audio = pipeline.CreateEmitter<AudioBuffer>(this, nameof(this.Audio));
         }
 
         private RtspCapture(Pipeline pipeline)
@@ -119,8 +120,8 @@ namespace CMU.Smartlab.Rtsp
             // check for null since it's possible that Start was never called
             if (this.camera != null)
             {
-                this.camera.Shutdown();
-                this.camera.Dispose();
+                // this.camera.Shutdown();
+                // this.camera.Dispose();
                 this.camera = null;
             }
         }
@@ -199,10 +200,11 @@ namespace CMU.Smartlab.Rtsp
 
                 if (rawFrame is RawAudioFrame rawAudioFrame)
                 {
-                    if (this.configuration.CaptureAudio)
-                    {
-                        this.ProcessAudioFrame(rawAudioFrame);
-                    }
+                    // if (this.configuration.CaptureAudio)
+                    // {
+                    //     this.ProcessAudioFrame(rawAudioFrame);
+                    // }
+                    this.ProcessAudioFrame(rawAudioFrame);
                 }
             }
             catch (Exception e)
@@ -298,6 +300,10 @@ namespace CMU.Smartlab.Rtsp
                 // Manually get stride number:
                 System.Drawing.Imaging.PixelFormat format = this.GetSystemPixelFormat(this.PixelFormat);
                 Bitmap bitmap = new Bitmap(this.configuration.Width, this.configuration.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+                // TEMPORARY 
+                // Bitmap bitmap = new Bitmap(this.configuration.Width, 80, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
                 BitmapData bdata = bitmap.LockBits(
                     new Rectangle(
                         new Point(0, 0),
@@ -306,7 +312,8 @@ namespace CMU.Smartlab.Rtsp
                     bitmap.PixelFormat);
                 decodedFrame.TransformTo(bdata.Scan0, bdata.Stride, this.transformParameters);
                 bitmap.UnlockBits(bdata);
-                using (var sharedImage = ImagePool.GetOrCreate(bitmap))
+                // using (var sharedImage = ImagePool.GetOrCreate(bitmap))
+                using (var sharedImage = ImagePool.GetOrCreateFromBitmap(bitmap))
                 {
                     var originatingTime = rawVideoFrame.Timestamp;
                     this.Out.Post(sharedImage, originatingTime);

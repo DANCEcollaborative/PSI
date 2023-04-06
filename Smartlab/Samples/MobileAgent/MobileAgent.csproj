@@ -30,6 +30,7 @@
     <ProjectReference Include="..\..\..\Sources\Speech\Microsoft.Psi.Speech\Microsoft.Psi.Speech.csproj"/>
     <ProjectReference Include="..\..\Sources\Communication\CMU.Smartlab.Communication.csproj"/>
     <ProjectReference Include="..\..\Sources\Identity\CMU.Smartlab.Identity.csproj"/>
+    <ProjectReference Include="..\..\Sources\Media\CMU.Smartlab.RtspCapture\CMU.Smartlab.Rtsp.csproj"/>
     <ProjectReference Include="..\..\..\Sources\Integrations\CognitiveServices\Test.Psi.CognitiveServices.Speech\Test.Psi.CognitiveServices.Speech.csproj"/>
   </ItemGroup>
   <ItemGroup>
