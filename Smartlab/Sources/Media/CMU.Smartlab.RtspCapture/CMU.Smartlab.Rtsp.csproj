@@ -44,7 +44,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="./RtspCapture.cs" /> 
+    <!-- <Compile Include="./RtspCapture.cs" />  -->
      <!--    <Compile Include="RtspDecoder\RawFramesDecoding\AudioConversionParameters.cs" />
     <Compile Include="RtspDecoder\RawFramesDecoding\DecodedFrames\AudioFrameFormat.cs" />
     <Compile Include="RtspDecoder\RawFramesDecoding\DecodedFrames\DecodedAudioFrame.cs" />
