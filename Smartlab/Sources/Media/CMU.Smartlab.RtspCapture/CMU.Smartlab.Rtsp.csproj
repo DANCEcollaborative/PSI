@@ -7,6 +7,7 @@
     <AssemblyName>CMU.Smartlab.RtspCapture</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
 
   <ItemGroup>
@@ -44,8 +45,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- <Compile Include="./RtspCapture.cs" />  -->
-     <!--    <Compile Include="RtspDecoder\RawFramesDecoding\AudioConversionParameters.cs" />
+    <Compile Include="./RtspCapture.cs" /> 
+    <Compile Include="RtspDecoder\RawFramesDecoding\AudioConversionParameters.cs" />
     <Compile Include="RtspDecoder\RawFramesDecoding\DecodedFrames\AudioFrameFormat.cs" />
     <Compile Include="RtspDecoder\RawFramesDecoding\DecodedFrames\DecodedAudioFrame.cs" />
     <Compile Include="RtspDecoder\RawFramesDecoding\DecodedFrames\DecodedVideoFrame.cs" />
@@ -64,7 +65,7 @@
     <Compile Include="RtspDecoder\RawFramesDecoding\ScalingQuality.cs" />
     <Compile Include="RtspDecoder\RawFramesDecoding\TransformParameters.cs" />
     <Compile Include="RtspDecoder\RawFramesReceiving\IRawFramesSource.cs" />
-    <Compile Include="RtspDecoder\RawFramesReceiving\RawFramesSource.cs" /> -->
+    <Compile Include="RtspDecoder\RawFramesReceiving\RawFramesSource.cs" />
     <ProjectReference Include="..\..\..\..\Sources\Devices\Microsoft.Psi.DeviceManagement\Microsoft.Psi.DeviceManagement.csproj" />
   </ItemGroup>
 </Project>
