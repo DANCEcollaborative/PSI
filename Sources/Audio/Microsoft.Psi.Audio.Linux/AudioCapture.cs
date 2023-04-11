@@ -118,12 +118,14 @@ namespace Microsoft.Psi.Audio
             // notify that this is an infinite source component
             notifyCompletionTime(DateTime.MaxValue);
 
+            Console.WriteLine("Microsft.Psi.Audio.AudioCapture.Start: Declaring audioDevice");
             this.audioDevice = LinuxAudioInterop.Open(
                 this.configuration.DeviceName,
                 LinuxAudioInterop.Mode.Capture,
                 (int)this.configuration.Format.SamplesPerSec,
                 this.configuration.Format.Channels,
                 LinuxAudioInterop.ConvertFormat(this.configuration.Format));
+            Console.WriteLine("Microsft.Psi.Audio.AudioCapture.Start: audioDevice declaration complete");
 
             this.background = new Thread(new ThreadStart(() =>
             {

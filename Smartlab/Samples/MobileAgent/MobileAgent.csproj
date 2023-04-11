@@ -32,12 +32,14 @@
     <ProjectReference Include="..\..\..\Sources\Speech\Microsoft.Psi.Speech\Microsoft.Psi.Speech.csproj"/>
     <ProjectReference Include="..\..\Sources\Communication\CMU.Smartlab.Communication.csproj"/>
     <ProjectReference Include="..\..\Sources\Identity\CMU.Smartlab.Identity.csproj"/>
+    <ProjectReference Include="..\..\Sources\Audio\CMU.Smartlab.Audio.csproj"/>
     <ProjectReference Include="..\..\Sources\Media\CMU.Smartlab.RtspCapture\CMU.Smartlab.Rtsp.csproj"/>
     <ProjectReference Include="..\..\..\Sources\Integrations\CognitiveServices\Test.Psi.CognitiveServices.Speech\Test.Psi.CognitiveServices.Speech.csproj"/>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MathNet.Spatial.Signed" Version="0.6.0"/>
     <PackageReference Include="Microsoft.Psi.DeviceManagement" Version="0.15.49.1-beta"/>
+    <PackageReference Include="Microsoft.CognitiveServices.Speech" Version="*"/>
     <PackageReference Include="NetMQ" Version="*"/>
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0"/>
     <PackageReference Include="System.ServiceModel.Duplex" Version="4.8.1"/>

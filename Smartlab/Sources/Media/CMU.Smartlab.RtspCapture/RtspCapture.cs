@@ -133,7 +133,7 @@ namespace CMU.Smartlab.Rtsp
             rtspNotifyCompletionTime(DateTime.MaxValue);
 
             // RTSP setting
-            this.RtspFrameReciver(this.uri, this.credential);
+            this.RtspFrameReceiver(this.uri, this.credential);
 
             // Get capture sample
             // if (this.rtspFormat != null)
@@ -165,7 +165,7 @@ namespace CMU.Smartlab.Rtsp
         /// </summary>
         /// <param name="rtspUri">the adderess of RTSP camera with 172.0.0.0.</param>
         /// <param name="rtspCredential">the username and password of RTSP camera.</param>
-        private void RtspFrameReciver(Uri rtspUri, NetworkCredential rtspCredential)
+        private void RtspFrameReceiver(Uri rtspUri, NetworkCredential rtspCredential)
         {
             ConnectionParameters connectionParameters;
             if (rtspCredential != null)
