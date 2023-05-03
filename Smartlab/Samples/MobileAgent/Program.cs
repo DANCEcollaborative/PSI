@@ -19,7 +19,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 // using Microsoft.Kinect;
 using Microsoft.Psi;
-using Microsoft.Psi.Components; 
+using Microsoft.Psi.Components;
 using Microsoft.Psi.Audio;
 using Microsoft.Psi.CognitiveServices;
 using Microsoft.Psi.CognitiveServices.Speech;
@@ -63,7 +63,7 @@ namespace SigdialDemo
         // private const string TcpIPPublisher = "tcp://*:40002";
         private const string TcpIPPublisher = "tcp://*:30002";
         // private const string TcpIPPublisher = "tcp://*:5500";
-        
+
 
         private const double SocialDistance = 183;
         private const double DistanceWarningCooldown = 30.0;
@@ -90,32 +90,32 @@ namespace SigdialDemo
         public static CameraInfo VhtInfo;
         // private readonly Merger<Message<string>, int> merger;
 
-        public static String remoteIP; 
+        public static String remoteIP;
 
         public static void Main(string[] args)
         {
             SetConsole();
             if (Initialize())    // TEMPORARY
-            if (true)
-            {
-                bool exit = false;
-                while (!exit)
+                if (true)
                 {
-                    Console.WriteLine("############################################################################");
-                    Console.WriteLine("1) Respond to requests from remote device.");
-                    ConsoleKey key = Console.ReadKey().Key;
-                    Console.WriteLine();
-                    switch (key)
+                    bool exit = false;
+                    while (!exit)
                     {
-                        case ConsoleKey.D1:
-                            RunDemo();
-                            break;
-                        // case ConsoleKey.Q:
-                        //     exit = true;
-                        //     break;
+                        Console.WriteLine("############################################################################");
+                        Console.WriteLine("1) Respond to requests from remote device.");
+                        ConsoleKey key = Console.ReadKey().Key;
+                        Console.WriteLine();
+                        switch (key)
+                        {
+                            case ConsoleKey.D1:
+                                RunDemo();
+                                break;
+                                // case ConsoleKey.Q:
+                                //     exit = true;
+                                //     break;
+                        }
                     }
                 }
-            }
             // else
             // {
             //     Console.ReadLine();
@@ -150,21 +150,22 @@ namespace SigdialDemo
 
             return true;
         }
- 
+
         // ...
         public static void RunDemo()
         {
-            String remoteIP; 
+            String remoteIP;
             // String localIP = "tcp://127.0.0.1:40003";
 
-            using (var responseSocket = new ResponseSocket("@tcp://*:40001")) {
+            using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
+            {
                 var message = responseSocket.ReceiveFrameString();
                 Console.WriteLine("RunDemoWithRemoteMultipart, responseSocket received '{0}'", message);
                 responseSocket.SendFrame(message);
-                remoteIP = message; 
+                remoteIP = message;
                 Console.WriteLine("RunDemoWithRemoteMultipart: remoteIP = '{0}'", remoteIP);
             }
-            Thread.Sleep(1000); 
+            Thread.Sleep(1000);
 
 
             using (var p = Pipeline.Create())
@@ -172,29 +173,81 @@ namespace SigdialDemo
                 // Subscribe to messages from remote sensor using NetMQ (ZeroMQ)
                 // var nmqSubFromSensor = new NetMQSubscriber<string>(p, "", remoteIP, MessagePackFormat.Instance, useSourceOriginatingTimes = true, name="Sensor to PSI");
                 // var nmqSubFromSensor = new NetMQSubscriber<string>(p, "", remoteIP, JsonFormat.Instance, true, "Sensor to PSI");
-                var nmqSubFromSensor = new NetMQSubscriber<IDictionary<string,object>>(p, "", remoteIP, MessagePackFormat.Instance, true, "Sensor to PSI");
+
+                // AUDIO SETUP
+                var format = WaveFormat.Create16BitPcm(16000, 1);
+                var audioFromNano = new NetMQSource<byte[]>(
+                    p,
+                    "temp",
+                    "tcp://127.0.0.1:40003",
+                    MessagePackFormat.Instance);
+                var doaFromNano = new NetMQSource<int>(
+                    p,
+                    "temp2",
+                    "tcp://127.0.0.1:40004",
+                    MessagePackFormat.Instance);
+                var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_2.wav");
+                var nmqSubFromSensor = new NetMQSubscriber<IDictionary<string, object>>(p, "", remoteIP, MessagePackFormat.Instance, true, "Sensor to PSI");
 
                 // Create a publisher for messages from the sensor to Bazaar
-                var amqPubSensorToBazaar = new AMQPublisher<IDictionary<string,object>>(p, TopicFromSensor, TopicToBazaar, "Sensor to Bazaar"); 
+                var amqPubSensorToBazaar = new AMQPublisher<IDictionary<string, object>>(p, TopicFromSensor, TopicToBazaar, "Sensor to Bazaar");
 
                 // Subscribe to messages from Bazaar for the agent
-                var amqSubBazaarToAgent = new AMQSubscriber<IDictionary<string,object>>(p, TopicFromBazaar, TopicToAgent, "Bazaar to Agent"); 
+                var amqSubBazaarToAgent = new AMQSubscriber<IDictionary<string, object>>(p, TopicFromBazaar, TopicToAgent, "Bazaar to Agent");
 
                 // Create a publisher for messages to the agent using NetMQ (ZeroMQ)
-                var nmqPubToAgent = new NetMQPublisher<IDictionary<string,object>>(p, TopicFaceOrientation, TcpIPPublisher, MessagePackFormat.Instance);
+                var nmqPubToAgent = new NetMQPublisher<IDictionary<string, object>>(p, TopicFaceOrientation, TcpIPPublisher, MessagePackFormat.Instance);
                 // nmqPubToAgent.Do(x => Console.WriteLine("RunDemoWithRemoteMultipart, nmqPubToAgent.Do: {0}", x));
 
                 // Route messages from the sensor to Bazaar
-                nmqSubFromSensor.PipeTo(amqPubSensorToBazaar.IDictionaryIn); 
+                nmqSubFromSensor.PipeTo(amqPubSensorToBazaar.IDictionaryIn);
 
                 // Combine messages (1) direct from sensor, and (2) from Bazaar, and send to agent
-                SmartlabMerge<IDictionary<string,object>> mergeToAgent = new SmartlabMerge<IDictionary<string,object>>(p,"Merge to Agent"); 
-                var receiverSensor = mergeToAgent.AddInput("Sensor to PSI"); 
-                var receiverBazaar = mergeToAgent.AddInput("Bazaar to Agent"); 
-                nmqSubFromSensor.PipeTo(receiverSensor); 
+                SmartlabMerge<IDictionary<string, object>> mergeToAgent = new SmartlabMerge<IDictionary<string, object>>(p, "Merge to Agent");
+                var receiverSensor = mergeToAgent.AddInput("Sensor to PSI");
+                var receiverBazaar = mergeToAgent.AddInput("Bazaar to Agent");
+                nmqSubFromSensor.PipeTo(receiverSensor);
                 amqSubBazaarToAgent.PipeTo(receiverBazaar);
                 // mergeToAgent.Select(m => m.Data).PipeTo(nmqPubToAgent); 
-                mergeToAgent.PipeTo(nmqPubToAgent); 
+                mergeToAgent.Select(m =>
+                {
+                    Console.WriteLine($"Line 198 ->");
+                    Console.WriteLine(m);
+                    return m;
+                }).PipeTo(nmqPubToAgent);
+
+                var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_2.wav");
+
+                var audioInAudioBufferFormat = audioFromNano
+                    .Select(t =>
+                    {
+                        var ab = new AudioBuffer(t, format);
+                        // Console.WriteLine(ab.Data.Length);
+                        // Console.WriteLine(t.Data);
+                        return ab;
+                    });
+                audioInAudioBufferFormat.PipeTo(saveToWavFile);
+                var joinedStream = audioInAudioBufferFormat.Join(doaFromNano, TimeSpan.FromMilliseconds(100));
+                joinedStream.Do(x =>
+                {
+                    Console.WriteLine($"{x.Item1.Data.Length} {x.Item2}");
+                });
+                // var vad = new SystemVoiceActivityDetector(p);
+                // audioInAudioBufferFormat.PipeTo(vad);
+
+                var recognizer = new AzureSpeechRecognizer(p, new AzureSpeechRecognizerConfiguration()
+                {
+                    SubscriptionKey = Program.AzureSubscriptionKey,
+                    Region = Program.AzureRegion
+                });
+                var annotatedAudio = audioInAudioBufferFormat.Join(vad);
+                annotatedAudio.PipeTo(recognizer);
+
+                var finalResults = recognizer.Out.Where(result => result.IsFinal);
+                finalResults.Do((IStreamingSpeechRecognitionResult result, Envelope envelope) =>
+                {
+                    Console.WriteLine($"Send text message to Bazaar: {result.Text}");
+                });
 
                 p.Run();
 
@@ -207,22 +260,22 @@ namespace SigdialDemo
             using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
             using (var requestSocket = new RequestSocket(">tcp://localhost:40001"))
             using (var p = Pipeline.Create())
-            for (;;) 
-            {
+                for (; ; )
                 {
-                    var mq = new NetMQSource<string>(p, "test-topic", "tcp://localhost:45678", JsonFormat.Instance); 
-                    Console.WriteLine("requestSocket : Sending 'Hello'");
-                    requestSocket.SendFrame(">>>>> Hello from afar! <<<<<<");
-                    var message = responseSocket.ReceiveFrameString();
-                    Console.WriteLine("responseSocket : Server Received '{0}'", message);
-                    Console.WriteLine("responseSocket Sending 'Hibackatcha!'");
-                    responseSocket.SendFrame("Hibackatcha!");
-                    message = requestSocket.ReceiveFrameString();
-                    Console.WriteLine("requestSocket : Received '{0}'", message);
-                    Console.ReadLine();
-                    Thread.Sleep(1000);
+                    {
+                        var mq = new NetMQSource<string>(p, "test-topic", "tcp://localhost:45678", JsonFormat.Instance);
+                        Console.WriteLine("requestSocket : Sending 'Hello'");
+                        requestSocket.SendFrame(">>>>> Hello from afar! <<<<<<");
+                        var message = responseSocket.ReceiveFrameString();
+                        Console.WriteLine("responseSocket : Server Received '{0}'", message);
+                        Console.WriteLine("responseSocket Sending 'Hibackatcha!'");
+                        responseSocket.SendFrame("Hibackatcha!");
+                        message = requestSocket.ReceiveFrameString();
+                        Console.WriteLine("requestSocket : Received '{0}'", message);
+                        Console.ReadLine();
+                        Thread.Sleep(1000);
+                    }
                 }
-            }
         }
 
 
@@ -232,7 +285,7 @@ namespace SigdialDemo
             string address = "tcp://127.0.0.1:40001";
             var pubSocket = new PublisherSocket();
             pubSocket.Options.SendHighWatermark = 1000;
-            pubSocket.Bind(address); 
+            pubSocket.Bind(address);
             var subSocket = new SubscriberSocket();
             subSocket.Connect(address);
             Thread.Sleep(100);
@@ -240,19 +293,22 @@ namespace SigdialDemo
             String received = "";
 
             // Testing send & receive over same socket
-            for (;;) {
-                for (;;) {
-                    pubSocket.SendFrame( "Howdy from NetMQ!", false );
-                    Console.WriteLine( "About to try subSocket.ReceiveFrameString");
-                    received = subSocket.ReceiveFrameString(); 
-                    if  (received == "") {
-                        Console.WriteLine( "Received nothing");
-                        continue; 
+            for (; ; )
+            {
+                for (; ; )
+                {
+                    pubSocket.SendFrame("Howdy from NetMQ!", false);
+                    Console.WriteLine("About to try subSocket.ReceiveFrameString");
+                    received = subSocket.ReceiveFrameString();
+                    if (received == "")
+                    {
+                        Console.WriteLine("Received nothing");
+                        continue;
                     }
-                    Console.WriteLine( "Received something");
-                    break; 
+                    Console.WriteLine("Received something");
+                    break;
                 }
-                Console.WriteLine( received );
+                Console.WriteLine(received);
                 Thread.Sleep(2000);
             }
         }
