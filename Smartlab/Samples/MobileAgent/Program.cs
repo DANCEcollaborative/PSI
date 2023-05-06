@@ -35,6 +35,7 @@ using Apache.NMS.ActiveMQ.Transport.Discovery;
 using Rectangle = System.Drawing.Rectangle;
 using NetMQ;
 using NetMQ.Sockets;
+using Newtonsoft.Json;
 // using NetMQSource;
 // using ZeroMQ; 
 // using Operators; 
@@ -42,6 +43,13 @@ using NetMQ.Sockets;
 
 namespace SigdialDemo
 {
+    public class NanoIPs
+    {
+        public string audio_channel { get; set; }
+        public string doa { get; set; }
+        public string vad { get; set; }
+        public string remoteIP { get; set; }
+    }
     public class Program
     {
         private const string AppName = "SmartLab Project - Demo v3.0 (for SigDial Demo)";
@@ -70,7 +78,7 @@ namespace SigdialDemo
         private const double NVBGCooldownLocation = 8.0;
         private const double NVBGCooldownAudio = 3.0;
 
-        private static string AzureSubscriptionKey = "abee363f8d89444998c5f35b6365ca38";
+        private static string AzureSubscriptionKey = "b6ba5313943f4393abaa37e28a45de51";
         private static string AzureRegion = "eastus";
         public static readonly object SendToBazaarLock = new object();
         public static readonly object SendToPythonLock = new object();
@@ -156,13 +164,15 @@ namespace SigdialDemo
         {
             String remoteIP;
             // String localIP = "tcp://127.0.0.1:40003";
+            NanoIPs ips;
 
             using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
             {
                 var message = responseSocket.ReceiveFrameString();
                 Console.WriteLine("RunDemoWithRemoteMultipart, responseSocket received '{0}'", message);
                 responseSocket.SendFrame(message);
-                remoteIP = message;
+                ips = JsonConvert.DeserializeObject<NanoIPs>(message);
+                remoteIP = ips.remoteIP;
                 Console.WriteLine("RunDemoWithRemoteMultipart: remoteIP = '{0}'", remoteIP);
             }
             Thread.Sleep(1000);
@@ -176,17 +186,28 @@ namespace SigdialDemo
 
                 // AUDIO SETUP
                 var format = WaveFormat.Create16BitPcm(16000, 1);
+
+                // binary data stream
                 var audioFromNano = new NetMQSource<byte[]>(
                     p,
                     "temp",
-                    "tcp://127.0.0.1:40003",
+                    ips.audio_channel,
                     MessagePackFormat.Instance);
+
+                // DOA - Direction of Arrival (of sound, int values range from 0 to 360)
                 var doaFromNano = new NetMQSource<int>(
                     p,
                     "temp2",
-                    "tcp://127.0.0.1:40004",
+                    ips.doa,
                     MessagePackFormat.Instance);
+                var vadFromNano = new NetMQSource<int>(
+                    p,
+                    "temp3",
+                    ips.vad,
+                MessagePackFormat.Instance);
                 var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_2.wav");
+
+                // other messages
                 var nmqSubFromSensor = new NetMQSubscriber<IDictionary<string, object>>(p, "", remoteIP, MessagePackFormat.Instance, true, "Sensor to PSI");
 
                 // Create a publisher for messages from the sensor to Bazaar
@@ -216,8 +237,8 @@ namespace SigdialDemo
                     return m;
                 }).PipeTo(nmqPubToAgent);
 
-                var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_2.wav");
-
+                // processing audio and DOA input, and saving to file
+                // audioFromNano contains binary array data, needs to be converted to PSI compatible AudioBuffer format
                 var audioInAudioBufferFormat = audioFromNano
                     .Select(t =>
                     {
@@ -226,12 +247,25 @@ namespace SigdialDemo
                         // Console.WriteLine(t.Data);
                         return ab;
                     });
+
+                // saving to audio file
                 audioInAudioBufferFormat.PipeTo(saveToWavFile);
+
+                // TODO: save the joint AudioBuffer and DOA stream to file
                 var joinedStream = audioInAudioBufferFormat.Join(doaFromNano, TimeSpan.FromMilliseconds(100));
-                joinedStream.Do(x =>
+                // joinedStream.Do(x =>
+                // {
+                //     Console.WriteLine($"{x.Item1.Data.Length} {x.Item2}");
+                // });
+
+                // Voice Activity Detection - needed to detect when voice activity is taking place in audio
+                // TODO: if voice activity is in azure
+                var annotatedAudio = audioInAudioBufferFormat.Join(vadFromNano, TimeSpan.FromMilliseconds(100)).Select(x =>
                 {
-                    Console.WriteLine($"{x.Item1.Data.Length} {x.Item2}");
+                    return (x.Item1, x.Item2 == 1);
                 });
+
+
                 // var vad = new SystemVoiceActivityDetector(p);
                 // audioInAudioBufferFormat.PipeTo(vad);
 
@@ -240,13 +274,20 @@ namespace SigdialDemo
                     SubscriptionKey = Program.AzureSubscriptionKey,
                     Region = Program.AzureRegion
                 });
-                var annotatedAudio = audioInAudioBufferFormat.Join(vad);
+
+                // AUDIO [10, 283, 3972, 74.0397, ........., 835.3, 493.8]
+                // VAD [0, 0, 1, 1, 1, 1,................, 0, 0] (same length as above)
+
+                // To CHECK: What is being sent to Azure? Full audio or only voice activity audio segments? What are we being charged for, the time the ASR system is running or the audio duration being sent.
+
                 annotatedAudio.PipeTo(recognizer);
 
+                // "this is text transcription .... here the transcription is over [FINAL]."
                 var finalResults = recognizer.Out.Where(result => result.IsFinal);
                 finalResults.Do((IStreamingSpeechRecognitionResult result, Envelope envelope) =>
                 {
                     Console.WriteLine($"Send text message to Bazaar: {result.Text}");
+                    // place to add code for further communication with other systems
                 });
 
                 p.Run();
