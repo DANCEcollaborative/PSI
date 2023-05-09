@@ -252,6 +252,7 @@ namespace SigdialDemo
                 audioInAudioBufferFormat.PipeTo(saveToWavFile);
 
                 // TODO: save the joint AudioBuffer and DOA stream to file
+                // [var 'joinedStream' is not currently used]
                 var joinedStream = audioInAudioBufferFormat.Join(doaFromNano, TimeSpan.FromMilliseconds(100));
                 // joinedStream.Do(x =>
                 // {
