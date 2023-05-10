@@ -7,6 +7,7 @@ using CMU.Smartlab.Communication;
 using CMU.Smartlab.Identity;
 // using CMU.Smartlab.Rtsp;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -184,29 +185,6 @@ namespace SigdialDemo
                 // var nmqSubFromSensor = new NetMQSubscriber<string>(p, "", remoteIP, MessagePackFormat.Instance, useSourceOriginatingTimes = true, name="Sensor to PSI");
                 // var nmqSubFromSensor = new NetMQSubscriber<string>(p, "", remoteIP, JsonFormat.Instance, true, "Sensor to PSI");
 
-                // AUDIO SETUP
-                var format = WaveFormat.Create16BitPcm(16000, 1);
-
-                // binary data stream
-                var audioFromNano = new NetMQSource<byte[]>(
-                    p,
-                    "temp",
-                    ips.audio_channel,
-                    MessagePackFormat.Instance);
-
-                // DOA - Direction of Arrival (of sound, int values range from 0 to 360)
-                var doaFromNano = new NetMQSource<int>(
-                    p,
-                    "temp2",
-                    ips.doa,
-                    MessagePackFormat.Instance);
-                var vadFromNano = new NetMQSource<int>(
-                    p,
-                    "temp3",
-                    ips.vad,
-                MessagePackFormat.Instance);
-                var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_2.wav");
-
                 // other messages
                 var nmqSubFromSensor = new NetMQSubscriber<IDictionary<string, object>>(p, "", remoteIP, MessagePackFormat.Instance, true, "Sensor to PSI");
 
@@ -237,6 +215,32 @@ namespace SigdialDemo
                     return m;
                 }).PipeTo(nmqPubToAgent);
 
+
+                // AUDIO SETUP
+                var format = WaveFormat.Create16BitPcm(16000, 1);
+                // var format = WaveFormat.Create16kHz1Channel16BitPcm(); // Is this equivalent to above?
+
+                // binary data stream
+                var audioFromNano = new NetMQSource<byte[]>(
+                    p,
+                    "temp",
+                    ips.audio_channel,
+                    MessagePackFormat.Instance);
+
+                // DOA - Direction of Arrival (of sound, int values range from 0 to 360)
+                var doaFromNano = new NetMQSource<int>(
+                    p,
+                    "temp2",
+                    ips.doa,
+                    MessagePackFormat.Instance);
+                var vadFromNano = new NetMQSource<int>(
+                    p,
+                    "temp3",
+                    ips.vad,
+                MessagePackFormat.Instance);
+
+                var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio.wav");
+
                 // processing audio and DOA input, and saving to file
                 // audioFromNano contains binary array data, needs to be converted to PSI compatible AudioBuffer format
                 var audioInAudioBufferFormat = audioFromNano
@@ -251,9 +255,42 @@ namespace SigdialDemo
                 // saving to audio file
                 audioInAudioBufferFormat.PipeTo(saveToWavFile);
 
+
+                // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+                // vvvvvvvvvvvv From psi-samples SimpleVoiceActivityDetector vvvvvvvvvvvvvv
+                // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+                var acousticFeaturesExtractor = new AcousticFeaturesExtractor(p);
+                audioInAudioBufferFormat.PipeTo(acousticFeaturesExtractor);  // replaced microphone with audioInAudioBufferFormat
+
+                // Display the log energy
+                acousticFeaturesExtractor.LogEnergy
+                    .Sample(TimeSpan.FromSeconds(0.2))
+                    .Do(logEnergy => Console.WriteLine($"LogEnergy = {logEnergy}"));
+
+                // Create a voice-activity stream by thresholding the log energy
+                var vad = acousticFeaturesExtractor.LogEnergy
+                    .Select(l => l > 7);
+                
+                // Create filtered signal by aggregating over historical buffers
+                var vadWithHistory = acousticFeaturesExtractor.LogEnergy
+                    .Window(RelativeTimeInterval.Future(TimeSpan.FromMilliseconds(300)))
+                    .Aggregate(false, (previous, buffer) => (!previous && buffer.All(v => v > 7)) || (previous && !buffer.All(v => v < 7)));
+
+                // Write the microphone output, VAD streams, and some acoustic features to the store
+                var store = PsiStore.Create(p, "SimpleVAD", Path.Combine(Directory.GetCurrentDirectory(), "Stores"));
+                audioInAudioBufferFormat.Write("Audio", store);
+                vad.Write("VAD", store);
+                vadWithHistory.Write("VADFiltered", store);
+                acousticFeaturesExtractor.LogEnergy.Write("LogEnergy", store);
+                acousticFeaturesExtractor.ZeroCrossingRate.Write("ZeroCrossingRate", store);
+                // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                // ^^^^^^^^^^^^ From psi-samples SimpleVoiceActivityDetector ^^^^^^^^^^^^^
+                // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
                 // TODO: save the joint AudioBuffer and DOA stream to file
                 // [var 'joinedStream' is not currently used]
-                var joinedStream = audioInAudioBufferFormat.Join(doaFromNano, TimeSpan.FromMilliseconds(100));
+                // var joinedStream = audioInAudioBufferFormat.Join(doaFromNano, TimeSpan.FromMilliseconds(100));
                 // joinedStream.Do(x =>
                 // {
                 //     Console.WriteLine($"{x.Item1.Data.Length} {x.Item2}");
@@ -261,10 +298,12 @@ namespace SigdialDemo
 
                 // Voice Activity Detection - needed to detect when voice activity is taking place in audio
                 // TODO: if voice activity is in azure
-                var annotatedAudio = audioInAudioBufferFormat.Join(vadFromNano, TimeSpan.FromMilliseconds(100)).Select(x =>
-                {
-                    return (x.Item1, x.Item2 == 1);
-                });
+                // var annotatedAudio = audioInAudioBufferFormat.Join(vadFromNano, TimeSpan.FromMilliseconds(100)).Select(x =>
+                // {
+                //     return (x.Item1, x.Item2 == 1);
+                // });
+
+                var annotatedAudio = audioInAudioBufferFormat.Join(vadWithHistory); 
 
 
                 // var vad = new SystemVoiceActivityDetector(p);
@@ -291,7 +330,8 @@ namespace SigdialDemo
                     // place to add code for further communication with other systems
                 });
 
-                p.Run();
+                p.RunAsync();
+                Console.ReadKey();
 
             }
         }
