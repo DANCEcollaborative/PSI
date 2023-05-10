@@ -152,6 +152,7 @@ namespace SigdialDemo
                                                                                                                  
 ");
             Console.WriteLine("############################################################################");
+            // Console.WriteLine(Directory.GetCurrentDirectory());
         }
 
         static bool Initialize()
@@ -259,6 +260,11 @@ namespace SigdialDemo
                 // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                 // vvvvvvvvvvvv From psi-samples SimpleVoiceActivityDetector vvvvvvvvvvvvvv
                 // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+TopicFaceOrientation 
+                // To run from a stored audio file, uncomment the two lines below and customize the file name at the end of the first line
+                var inputStore = PsiStore.Open(p, "SimpleVAD", Path.Combine(Directory.GetCurrentDirectory(), "Stores", "psi_direct_audio_0.wav"));
+                audioInAudioBufferFormat = inputStore.OpenStream<AudioBuffer>("Audio");  // replaced microphone with audioInAudioBufferFormat
+
                 var acousticFeaturesExtractor = new AcousticFeaturesExtractor(p);
                 audioInAudioBufferFormat.PipeTo(acousticFeaturesExtractor);  // replaced microphone with audioInAudioBufferFormat
 
