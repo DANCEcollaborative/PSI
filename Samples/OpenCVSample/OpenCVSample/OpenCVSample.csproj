@@ -1,0 +1,63 @@
+﻿<Project Sdk="Microsoft.NET.Sdk" InitialTargets="CheckVariable">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>OpenCVSample</AssemblyName>
+    <ApplicationIcon />
+    <OutputType>WinExe</OutputType>
+    <CodeAnalysisRuleSet>../../../Build/Sample.Psi.ruleset</CodeAnalysisRuleSet>
+    <Platforms>x64</Platforms>
+    <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <PlatformTarget>x64</PlatformTarget>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <PlatformTarget>x64</PlatformTarget>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="stylecop.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="stylecop.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml" />
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="6.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Psi.Imaging" Version="0.18.72.1-beta" />
+    <PackageReference Include="Microsoft.Psi.Media.Windows.x64" Version="0.18.72.1-beta" />
+    <PackageReference Include="Microsoft.Psi.Runtime" Version="0.18.72.1-beta" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <Page Include="MainWindow.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OpenCVSample.Interop\OpenCVSample.Interop.vcxproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <Target Name="CheckVariable">
+    <Warning Text="In order to build this project you must define the environment variable OpenCVDir_V4 to point to your OpenCV SDK installation" ContinueOnError="WarnAndContinue" Condition="'$(OpenCVDir_V4)'==''" />
+    <CreateProperty Value="" Condition="'$(OpenCVDir_V4)'==''">
+      <Output TaskParameter="Value" PropertyName="BuildDependsOn" />
+    </CreateProperty>
+    <CreateProperty Value="false" Condition="'$(OpenCVDir_V4)'==''">
+      <Output TaskParameter="Value" PropertyName="GeneratePackageOnBuild" />
+    </CreateProperty>
+    <CreateProperty Value="" Condition="'$(OpenCVDir_V4)'==''">
+      <Output TaskParameter="Value" PropertyName="GenerateNuspecDependsOn" />
+    </CreateProperty>
+  </Target>
+</Project>
