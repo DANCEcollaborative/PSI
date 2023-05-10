@@ -101,9 +101,15 @@ namespace SigdialDemo
 
         public static String remoteIP;
 
+        // TEMPORARY
+        public static String audio_channel = "tcp://127.0.0.1:30001"; 
+        public static String doa = "tcp://127.0.0.1:30002"; 
+        public static String nanoVad = "tcp://127.0.0.1:30003"; 
+
         public static void Main(string[] args)
         {
             SetConsole();
+            // Console.WriteLine(Directory.GetCurrentDirectory());
             if (Initialize())    // TEMPORARY
                 if (true)
                 {
@@ -112,19 +118,21 @@ namespace SigdialDemo
                     {
                         Console.WriteLine("############################################################################");
                         Console.WriteLine("1) Respond to requests from remote device.");
-                        ConsoleKey key = Console.ReadKey().Key;
-                        Console.WriteLine();
-                        switch (key)
-                        {
-                            case ConsoleKey.D1:
-                                RunDemo();
-                                break;
-                                // case ConsoleKey.Q:
-                                //     exit = true;
-                                //     break;
-                        }
+                    Console.WriteLine("Q) Quit.");
+                    ConsoleKey key = Console.ReadKey().Key;
+                    Console.WriteLine();
+                    switch (key)
+                    {
+                        case ConsoleKey.D1:
+                            RunDemo();
+                            break;
+                        case ConsoleKey.Q:
+                            exit = true;
+                            break;
                     }
+                    exit = true;   // TEMPORARY for one loop only
                 }
+            }
             // else
             // {
             //     Console.ReadLine();
@@ -152,7 +160,6 @@ namespace SigdialDemo
                                                                                                                  
 ");
             Console.WriteLine("############################################################################");
-            // Console.WriteLine(Directory.GetCurrentDirectory());
         }
 
         static bool Initialize()
@@ -173,8 +180,9 @@ namespace SigdialDemo
                 var message = responseSocket.ReceiveFrameString();
                 Console.WriteLine("RunDemoWithRemoteMultipart, responseSocket received '{0}'", message);
                 responseSocket.SendFrame(message);
-                ips = JsonConvert.DeserializeObject<NanoIPs>(message);
-                remoteIP = ips.remoteIP;
+                remoteIP = message; 
+                // ips = JsonConvert.DeserializeObject<NanoIPs>(message);
+                // remoteIP = ips.remoteIP;
                 Console.WriteLine("RunDemoWithRemoteMultipart: remoteIP = '{0}'", remoteIP);
             }
             Thread.Sleep(1000);
@@ -225,19 +233,22 @@ namespace SigdialDemo
                 var audioFromNano = new NetMQSource<byte[]>(
                     p,
                     "temp",
-                    ips.audio_channel,
+                    // ips.audio_channel,  // TEMPORARY
+                    audio_channel,          // TEMPORARY
                     MessagePackFormat.Instance);
 
                 // DOA - Direction of Arrival (of sound, int values range from 0 to 360)
                 var doaFromNano = new NetMQSource<int>(
                     p,
                     "temp2",
-                    ips.doa,
+                    // ips.doa,         // TEMPORARY
+                    doa,             // TEMPORARY
                     MessagePackFormat.Instance);
                 var vadFromNano = new NetMQSource<int>(
                     p,
                     "temp3",
-                    ips.vad,
+                    // ips.vad,         // TEMPORARY
+                    nanoVad,                // TEMPORARY
                 MessagePackFormat.Instance);
 
                 var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio.wav");
@@ -260,9 +271,10 @@ namespace SigdialDemo
                 // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                 // vvvvvvvvvvvv From psi-samples SimpleVoiceActivityDetector vvvvvvvvvvvvvv
                 // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-TopicFaceOrientation 
+
                 // To run from a stored audio file, uncomment the two lines below and customize the file name at the end of the first line
-                var inputStore = PsiStore.Open(p, "SimpleVAD", Path.Combine(Directory.GetCurrentDirectory(), "Stores", "psi_direct_audio_0.wav"));
+                // var inputStore = PsiStore.Open(p, "psi_direct_audio_0.wav", Path.Combine(Directory.GetCurrentDirectory(), "Stores"));
+                var inputStore = PsiStore.Open(p, "psi_direct_audio_0", Path.Combine(Directory.GetCurrentDirectory(), "Stores"), true);
                 audioInAudioBufferFormat = inputStore.OpenStream<AudioBuffer>("Audio");  // replaced microphone with audioInAudioBufferFormat
 
                 var acousticFeaturesExtractor = new AcousticFeaturesExtractor(p);
