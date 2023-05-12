@@ -98,7 +98,11 @@ namespace SigdialDemo
         public static CameraInfo VhtInfo;
         // private readonly Merger<Message<string>, int> merger;
 
-        public static String remoteIP;
+        public static String remoteIP = "tcp://128.2.212.138:40000";
+            // remoteIP = "tcp://128.2.220.118:40003"; 
+        public static String audio_channel = "tcp://128.2.212.138:40001"; 
+        public static String doa = "tcp://128.2.212.138:40002"; 
+        public static String nanoVad = "tcp://128.2.212.138:40003"; 
 
         public static void Main(string[] args)
         {
@@ -162,20 +166,21 @@ namespace SigdialDemo
         // ...
         public static void RunDemo()
         {
-            String remoteIP;
             // String localIP = "tcp://127.0.0.1:40003";
             NanoIPs ips;
 
-            using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
-            {
-                var message = responseSocket.ReceiveFrameString();
-                Console.WriteLine("RunDemoWithRemoteMultipart, responseSocket received '{0}'", message);
-                responseSocket.SendFrame(message);
-                ips = JsonConvert.DeserializeObject<NanoIPs>(message);
-                remoteIP = ips.remoteIP;
-                Console.WriteLine("RunDemoWithRemoteMultipart: remoteIP = '{0}'", remoteIP);
-            }
-            Thread.Sleep(1000);
+            // String remoteIP;
+            // remoteIP = "tcp://128.2.220.118:40003"; 
+            // using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
+            // {
+            //     var message = responseSocket.ReceiveFrameString();
+            //     Console.WriteLine("RunDemoWithRemoteMultipart, responseSocket received '{0}'", message);
+            //     responseSocket.SendFrame(message);
+            //     ips = JsonConvert.DeserializeObject<NanoIPs>(message);
+            //     remoteIP = ips.remoteIP;
+            //     Console.WriteLine("RunDemoWithRemoteMultipart: remoteIP = '{0}'", remoteIP);
+            // }
+            // Thread.Sleep(1000);
 
 
             using (var p = Pipeline.Create())
@@ -191,21 +196,21 @@ namespace SigdialDemo
                 var audioFromNano = new NetMQSource<byte[]>(
                     p,
                     "temp",
-                    ips.audio_channel,
+                    audio_channel,
                     MessagePackFormat.Instance);
 
                 // DOA - Direction of Arrival (of sound, int values range from 0 to 360)
                 var doaFromNano = new NetMQSource<int>(
                     p,
                     "temp2",
-                    ips.doa,
+                    doa,
                     MessagePackFormat.Instance);
                 var vadFromNano = new NetMQSource<int>(
                     p,
                     "temp3",
-                    ips.vad,
+                    nanoVad,
                 MessagePackFormat.Instance);
-                var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_2.wav");
+                var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_1.wav");
 
                 // other messages
                 var nmqSubFromSensor = new NetMQSubscriber<IDictionary<string, object>>(p, "", remoteIP, MessagePackFormat.Instance, true, "Sensor to PSI");
