@@ -205,12 +205,13 @@ namespace SigdialDemo
                     "temp2",
                     doa,
                     MessagePackFormat.Instance);
+
+                // VAD - Voice Activity Detection
                 var vadFromNano = new NetMQSource<int>(
                     p,
                     "temp3",
                     nanoVad,
                 MessagePackFormat.Instance);
-                var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_1.wav");
 
                 // other messages
                 var nmqSubFromSensor = new NetMQSubscriber<IDictionary<string, object>>(p, "", remoteIP, MessagePackFormat.Instance, true, "Sensor to PSI");
@@ -254,6 +255,7 @@ namespace SigdialDemo
                     });
 
                 // saving to audio file
+                var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_3.wav");
                 audioInAudioBufferFormat.PipeTo(saveToWavFile);
 
                 // TODO: save the joint AudioBuffer and DOA stream to file
