@@ -102,9 +102,9 @@ namespace SigdialDemo
         public static String remoteIP;
 
         // TEMPORARY
-        public static String audio_channel = "tcp://127.0.0.1:30001"; 
-        public static String doa = "tcp://127.0.0.1:30002"; 
-        public static String nanoVad = "tcp://127.0.0.1:30003"; 
+        public static String audio_channel = "tcp://128.2.212.138:40001"; 
+        public static String doa = "tcp://128.2.212.138:40002"; 
+        public static String nanoVad = "tcp://128.2.212.138:40003"; 
 
         public static void Main(string[] args)
         {
@@ -274,8 +274,8 @@ namespace SigdialDemo
 
                 // To run from a stored audio file, uncomment the two lines below and customize the file name at the end of the first line
                 // var inputStore = PsiStore.Open(p, "psi_direct_audio_0.wav", Path.Combine(Directory.GetCurrentDirectory(), "Stores"));
-                var inputStore = PsiStore.Open(p, "psi_direct_audio_0", Path.Combine(Directory.GetCurrentDirectory(), "Stores"), true);
-                audioInAudioBufferFormat = inputStore.OpenStream<AudioBuffer>("Audio");  // replaced microphone with audioInAudioBufferFormat
+                // var inputStore = PsiStore.Open(p, "psi_direct_audio_0", Path.Combine(Directory.GetCurrentDirectory(), "Stores"), true);
+                // audioInAudioBufferFormat = inputStore.OpenStream<AudioBuffer>("Audio");  // replaced microphone with audioInAudioBufferFormat
 
                 var acousticFeaturesExtractor = new AcousticFeaturesExtractor(p);
                 audioInAudioBufferFormat.PipeTo(acousticFeaturesExtractor);  // replaced microphone with audioInAudioBufferFormat
