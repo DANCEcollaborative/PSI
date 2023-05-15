@@ -79,8 +79,8 @@ namespace SigdialDemo
         private const double NVBGCooldownLocation = 8.0;
         private const double NVBGCooldownAudio = 3.0;
 
-        // private static string AzureSubscriptionKey = "b6ba5313943f4393abaa37e28a45de51";
-        private static string AzureSubscriptionKey = "09186ea05c6a4b6eb4e33971f1976172";
+        private static string AzureSubscriptionKey = "b6ba5313943f4393abaa37e28a45de51";
+        // private static string AzureSubscriptionKey = "09186ea05c6a4b6eb4e33971f1976172";
         private static string AzureRegion = "eastus";
         public static readonly object SendToBazaarLock = new object();
         public static readonly object SendToPythonLock = new object();
@@ -186,7 +186,7 @@ namespace SigdialDemo
             //     // remoteIP = ips.remoteIP;
             //     Console.WriteLine("RunDemoWithRemoteMultipart: remoteIP = '{0}'", remoteIP);
             // }
-            Thread.Sleep(1000);
+            // Thread.Sleep(1000);
 
 
             using (var p = Pipeline.Create())
@@ -194,7 +194,6 @@ namespace SigdialDemo
                 // Subscribe to messages from remote sensor using NetMQ (ZeroMQ)
                 // var nmqSubFromSensor = new NetMQSubscriber<string>(p, "", remoteIP, MessagePackFormat.Instance, useSourceOriginatingTimes = true, name="Sensor to PSI");
                 // var nmqSubFromSensor = new NetMQSubscriber<string>(p, "", remoteIP, JsonFormat.Instance, true, "Sensor to PSI");
-
                 // other messages
                 var nmqSubFromSensor = new NetMQSubscriber<IDictionary<string, object>>(p, "", remoteIP, MessagePackFormat.Instance, true, "Sensor to PSI");
 
@@ -254,8 +253,6 @@ namespace SigdialDemo
                     nanoVad,                // TEMPORARY
                 MessagePackFormat.Instance);
 
-                var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_05-14-b.wav");
-
                 // processing audio and DOA input, and saving to file
                 // audioFromNano contains binary array data, needs to be converted to PSI compatible AudioBuffer format
                 var audioInAudioBufferFormat = audioFromNano
@@ -268,10 +265,27 @@ namespace SigdialDemo
                     });
 
                 // saving to audio file
-                audioInAudioBufferFormat.PipeTo(saveToWavFile);
+                var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_05-14-c.wav");
+                audioInAudioBufferFormat.PipeTo(saveToWavFile);       
+                
+                // TODO: save the joint AudioBuffer and DOA stream to file
+                // {var 'joinedStream' is not currently used}
+                // var joinedStream = audioInAudioBufferFormat.Join(doaFromNano, TimeSpan.FromMilliseconds(100));
+                // joinedStream.Do(x =>
+                // {
+                //     Console.WriteLine($"{x.Item1.Data.Length} {x.Item2}");
+                // });
 
                 // var vad = new SystemVoiceActivityDetector(p);
                 // audioInAudioBufferFormat.PipeTo(vad);
+
+                // Voice Activity Detection - needed to detect when voice activity is taking place in audio
+                // TODO: if voice activity is in azure
+                // var annotatedAudio = audioInAudioBufferFormat.Join(vadFromNano, TimeSpan.FromMilliseconds(100)).Select(x =>
+                // {
+                //     return (x.Item1, x.Item2 == 1);
+                // });
+                
                 // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                 // vvvvvvvvvvvv From psi-samples SimpleVoiceActivityDetector vvvvvvvvvvvvvv
                 // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -286,53 +300,50 @@ namespace SigdialDemo
                 audioInAudioBufferFormat.PipeTo(acousticFeaturesExtractor);  // replaced microphone with audioInAudioBufferFormat
 
                 // Display the log energy
-                acousticFeaturesExtractor.LogEnergy
-                    .Sample(TimeSpan.FromSeconds(0.2))
-                    .Do(logEnergy => Console.WriteLine($"LogEnergy = {logEnergy}"));
+                // acousticFeaturesExtractor.LogEnergy
+                //     .Sample(TimeSpan.FromSeconds(0.2))
+                //     .Do(logEnergy => Console.Write($"LogEnergy = {logEnergy}"));
+                    // .Do(logEnergy => Console.WriteLine($"LogEnergy = {logEnergy}"));
 
                 // Create a voice-activity stream by thresholding the log energy
 
                 Console.WriteLine($"Creating vad");
                 var vad = acousticFeaturesExtractor.LogEnergy
                     .Select(l => l > 10);
+
+                    // .Do((l,m) => Console.Write($"LogEnergy = {l.ToString()}"))
+                    // .Select(l => l > 10)
+                    // .Do((l,m) => Console.WriteLine($"  --  vad = {l.ToString()}"));
+
+                    // .Select(l => l > 10);
                     // .Select(l => l > 7);
                 
                 // Create filtered signal by aggregating over historical buffers
                 Console.WriteLine($"Creating vadWithHistory");
                 var vadWithHistory = acousticFeaturesExtractor.LogEnergy
                     .Window(RelativeTimeInterval.Future(TimeSpan.FromMilliseconds(300)))
-                    .Aggregate(false, (previous, buffer) => (!previous && buffer.All(v => v > 7)) || (previous && !buffer.All(v => v < 7)));
+                    .Aggregate(false, (previous, buffer) => (!previous && buffer.All(v => v > 10)) || (previous && !buffer.All(v => v < 10)));
+                    //  .Aggregate(false, (previous, buffer) => (!previous && buffer.All(v => v > 7)) || (previous && !buffer.All(v => v < 7)));
 
                 // Write the microphone output, VAD streams, and some acoustic features to the store
-                Console.WriteLine($"Writing to store");
-                var store = PsiStore.Create(p, "SimpleVAD", Path.Combine(Directory.GetCurrentDirectory(), "Stores"));
-                audioInAudioBufferFormat.Write("Audio", store);
-                vad.Write("VAD", store);
-                vadWithHistory.Write("VADFiltered", store);
-                acousticFeaturesExtractor.LogEnergy.Write("LogEnergy", store);
-                acousticFeaturesExtractor.ZeroCrossingRate.Write("ZeroCrossingRate", store);
+                // Console.WriteLine($"Writing to store");
+                // var store = PsiStore.Create(p, "SimpleVAD", Path.Combine(Directory.GetCurrentDirectory(), "Stores"));
+                // audioInAudioBufferFormat.Write("Audio", store);
+                // vad.Write("VAD", store);
+                // vadWithHistory.Write("VADFiltered", store);
+                // acousticFeaturesExtractor.LogEnergy.Write("LogEnergy", store);
+                // acousticFeaturesExtractor.ZeroCrossingRate.Write("ZeroCrossingRate", store);
                 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                 // ^^^^^^^^^^^^ From psi-samples SimpleVoiceActivityDetector ^^^^^^^^^^^^^
                 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-                // TODO: save the joint AudioBuffer and DOA stream to file
-                // [var 'joinedStream' is not currently used]
-                // var joinedStream = audioInAudioBufferFormat.Join(doaFromNano, TimeSpan.FromMilliseconds(100));
-                // joinedStream.Do(x =>
-                // {
-                //     Console.WriteLine($"{x.Item1.Data.Length} {x.Item2}");
-                // });
-
-                // Voice Activity Detection - needed to detect when voice activity is taking place in audio
-                // TODO: if voice activity is in azure
-                // var annotatedAudio = audioInAudioBufferFormat.Join(vadFromNano, TimeSpan.FromMilliseconds(100)).Select(x =>
+                // Console.WriteLine($"Joining audioInAudioBufferFormat with vadWithHistory");
+                // var annotatedAudio = audioInAudioBufferFormat.Join(vadWithHistory); 
+                // var annotatedAudio = audioInAudioBufferFormat.Join(vadWithHistory, TimeSpan.FromMilliseconds(100)).Select(x =>
                 // {
                 //     return (x.Item1, x.Item2 == 1);
                 // });
-
-                // Console.WriteLine($"Joining audioInAudioBufferFormat with vadWithHistory");
-                // var annotatedAudio = audioInAudioBufferFormat.Join(vadWithHistory); 
                 Console.WriteLine($"Joining audioInAudioBufferFormat with vad");
                 var annotatedAudio = audioInAudioBufferFormat.Join(vad); 
 
