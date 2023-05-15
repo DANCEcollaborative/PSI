@@ -54,7 +54,6 @@ namespace SigdialDemo
     public class Program
     {
         private const string AppName = "SmartLab Project - Demo v3.0 (for SigDial Demo)";
-
         private const string TopicToBazaar = "PSI_Bazaar_Text";
         private const string TopicToPython = "PSI_Python_Image";
         private const string TopicToMacaw = "PSI_Macaw_Text";
@@ -65,42 +64,31 @@ namespace SigdialDemo
         private const string TopicToAgent = "PSI_Agent_Text";
         private const string TopicFromSensor = "Sensor_PSI_Text";
         private const string TopicFaceOrientation = "face-orientation";
-
         private const int SendingImageWidth = 360;
         private const int MaxSendingFrameRate = 15;
         private const string TcpIPResponder = "@tcp://*:40001";
-        // private const string TcpIPPublisher = "tcp://*:40002";
         private const string TcpIPPublisher = "tcp://*:30002";
+        // private const string TcpIPPublisher = "tcp://*:40002";
         // private const string TcpIPPublisher = "tcp://*:5500";
-
-
         private const double SocialDistance = 183;
         private const double DistanceWarningCooldown = 30.0;
         private const double NVBGCooldownLocation = 8.0;
         private const double NVBGCooldownAudio = 3.0;
-
         private static string AzureSubscriptionKey = "b6ba5313943f4393abaa37e28a45de51";
         private static string AzureRegion = "eastus";
         public static readonly object SendToBazaarLock = new object();
         public static readonly object SendToPythonLock = new object();
         public static readonly object LocationLock = new object();
         public static readonly object AudioSourceLock = new object();
-
         public static volatile bool AudioSourceFlag = true;
-
         public static DateTime LastLocSendTime = new DateTime();
         public static DateTime LastDistanceWarning = new DateTime();
         public static DateTime LastNVBGTime = new DateTime();
-
         public static List<IdentityInfo> IdInfoList;
         public static Dictionary<string, IdentityInfo> IdHead;
         public static Dictionary<string, IdentityInfo> IdTail;
         public static List<String> AudioSourceList;
         public static CameraInfo VhtInfo;
-        // private readonly Merger<Message<string>, int> merger;
-
-        // TEMPORARY
-
         public static String remoteIP = "tcp://128.2.212.138:40000";
         public static String audio_channel = "tcp://128.2.212.138:40001"; 
         public static String doa = "tcp://128.2.212.138:40002"; 
@@ -171,8 +159,7 @@ namespace SigdialDemo
         // ...
         public static void RunDemo()
         {
-            // String localIP = "tcp://127.0.0.1:40003";
-            NanoIPs ips;
+            // NanoIPs ips;
 
             // String remoteIP;
             // using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
@@ -224,11 +211,8 @@ namespace SigdialDemo
                 }).PipeTo(nmqPubToAgent);
 
                 // ======================================================================================
-                // ======================================================================================
-                // ======================================================================================
-                // AUDIO SETUP
+                // vvv AUDIO SETUP vvv
                 var format = WaveFormat.Create16BitPcm(16000, 1);
-                // var format = WaveFormat.Create16kHz1Channel16BitPcm(); // Is this equivalent to above?
 
                 // binary data stream
                 var audioFromNano = new NetMQSource<byte[]>(
@@ -245,6 +229,7 @@ namespace SigdialDemo
                     // ips.doa,         // TEMPORARY
                     doa,             // TEMPORARY
                     MessagePackFormat.Instance);
+
                 var vadFromNano = new NetMQSource<int>(
                     p,
                     "temp3",
@@ -258,40 +243,19 @@ namespace SigdialDemo
                     .Select(t =>
                     {
                         var ab = new AudioBuffer(t, format);
-                        // Console.WriteLine(ab.Data.Length);
-                        // Console.WriteLine(t.Data);
                         return ab;
                     });
 
                 // saving to audio file
-                var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_05-14-c.wav");
-                audioInAudioBuffer.PipeTo(saveToWavFile);       
-                
-                // TODO: save the joint AudioBuffer and DOA stream to file
-                // {var 'joinedStream' is not currently used}
-                // var joinedStream = audioInAudioBuffer.Join(doaFromNano, TimeSpan.FromMilliseconds(100));
-                // joinedStream.Do(x =>
-                // {
-                //     Console.WriteLine($"{x.Item1.Data.Length} {x.Item2}");
-                // });
+                // var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_05-14-a.wav");
+                // audioInAudioBuffer.PipeTo(saveToWavFile);  
 
-                // var vad = new SystemVoiceActivityDetector(p);
-                // audioInAudioBuffer.PipeTo(vad);
-
-                // Voice Activity Detection - needed to detect when voice activity is taking place in audio
-                // TODO: if voice activity is in azure
-                // var annotatedAudio = audioInAudioBuffer.Join(vadFromNano, TimeSpan.FromMilliseconds(100)).Select(x =>
-                // {
-                //     return (x.Item1, x.Item2 == 1);
-                // });
-                
-                // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                 // vvvvvvvvvvvv From psi-samples SimpleVoiceActivityDetector vvvvvvvvvvvvvv
-                // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
-                // To run from a stored audio file, uncomment the two lines below and customize the file name at the end of the first line
+                // To run from a stored audio file
+                //    -- Comment out the 'audioInAudioBuffer' declaration above
+                //    -- Uncomment the two lines below and customize the file name at the end of the first line
                 // var inputStore = PsiStore.Open(p, "psi_direct_audio_0.wav", Path.Combine(Directory.GetCurrentDirectory(), "Stores"));
-                // var inputStore = PsiStore.Open(p, "psi_direct_audio_0", Path.Combine(Directory.GetCurrentDirectory(), "Stores"), true);
                 // audioInAudioBuffer = inputStore.OpenStream<AudioBuffer>("Audio");  // replaced microphone with audioInAudioBuffer
 
                 var acousticFeaturesExtractor = new AcousticFeaturesExtractor(p);
@@ -305,24 +269,15 @@ namespace SigdialDemo
                     // .Do(logEnergy => Console.WriteLine($"LogEnergy = {logEnergy}"));
 
                 // Create a voice-activity stream by thresholding the log energy
-
                 Console.WriteLine($"Creating vad");
                 var vad = acousticFeaturesExtractor.LogEnergy
                     .Select(l => l > 10);
-
-                    // .Do((l,m) => Console.Write($"LogEnergy = {l.ToString()}"))
-                    // .Select(l => l > 10)
-                    // .Do((l,m) => Console.WriteLine($"  --  vad = {l.ToString()}"));
-
-                    // .Select(l => l > 10);
-                    // .Select(l => l > 7);
                 
                 // Create filtered signal by aggregating over historical buffers
                 Console.WriteLine($"Creating vadWithHistory");
                 var vadWithHistory = acousticFeaturesExtractor.LogEnergy
                     .Window(RelativeTimeInterval.Future(TimeSpan.FromMilliseconds(300)))
                     .Aggregate(false, (previous, buffer) => (!previous && buffer.All(v => v > 10)) || (previous && !buffer.All(v => v < 10)));
-                    //  .Aggregate(false, (previous, buffer) => (!previous && buffer.All(v => v > 7)) || (previous && !buffer.All(v => v < 7)));
 
                 // Write the microphone output, VAD streams, and some acoustic features to the store
                 // Console.WriteLine($"Writing to store");
@@ -332,56 +287,39 @@ namespace SigdialDemo
                 // vadWithHistory.Write("VADFiltered", store);
                 // acousticFeaturesExtractor.LogEnergy.Write("LogEnergy", store);
                 // acousticFeaturesExtractor.ZeroCrossingRate.Write("ZeroCrossingRate", store);
-                // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                 // ^^^^^^^^^^^^ From psi-samples SimpleVoiceActivityDetector ^^^^^^^^^^^^^
-                // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-                // Console.WriteLine($"Joining audioInAudioBuffer with vadWithHistory");
-                Console.WriteLine($"Joining audioInAudioBuffer with vad...");
-                // var annotatedAudio = audioInAudioBuffer.Join(vad); 
-                // var annotatedAudio = audioInAudioBuffer.Join(vadWithHistory); 
-
-                // var annotatedAudio = audioInAudioBuffer.Join(vadWithHistory, TimeSpan.FromMilliseconds(100)).Select(x =>
-                // {
-                //     return (x.Item1, x.Item2 == 1);
-                // });
                 
+
+                // AUDIO [10, 283, 3972, 74.0397, ........., 835.3, 493.8]
+                // VAD [0, 0, 1, 1, 1, 1,................, 0, 0] (same length as above)
                 var annotatedAudio = audioInAudioBuffer.Join(vadWithHistory, TimeSpan.FromMilliseconds(100)).Select(x =>
                 {
                     return (x.Item1, x.Item2);
                 });
 
-                Console.WriteLine($"Creating Azure recognizer");
                 var recognizer = new AzureSpeechRecognizer(p, new AzureSpeechRecognizerConfiguration()
                 {
                     SubscriptionKey = Program.AzureSubscriptionKey,
                     Region = Program.AzureRegion
                 });
 
-                // AUDIO [10, 283, 3972, 74.0397, ........., 835.3, 493.8]
-                // VAD [0, 0, 1, 1, 1, 1,................, 0, 0] (same length as above)
-
-                // To CHECK: What is being sent to Azure? Full audio or only voice activity audio segments? What are we being charged for, the time the ASR system is running or the audio duration being sent.
-
-                Console.WriteLine($"Piping to Azure recognizer code");
+                // To CHECK: 
+                // What is being sent to Azure? Answer: Only audio for which voice activity detection (vad) == true
+                // What are we being charged for: the time the ASR system is running or the audio duration being sent?
                 annotatedAudio.PipeTo(recognizer);
 
-                // "this is text transcription .... here the transcription is over [FINAL]."
+                // Text transcription from Azure
                 var finalResults = recognizer.Out.Where(result => result.IsFinal);
                 finalResults.Do((IStreamingSpeechRecognitionResult result, Envelope envelope) =>
                 {
                     Console.WriteLine($"Send text message to Bazaar: {result.Text}");
                     // place to add code for further communication with other systems
                 });
-
-                // ======================================================================================
-                // ======================================================================================
+                // ^^^ AUDIO SETUP ^^^
                 // ======================================================================================
 
                 p.RunAsync();
                 Console.ReadKey();
-
             }
         }
 
@@ -443,7 +381,6 @@ namespace SigdialDemo
                 Thread.Sleep(2000);
             }
         }
-
 
 
         private static String getRandomName()
