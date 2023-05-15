@@ -79,7 +79,8 @@ namespace SigdialDemo
         private const double NVBGCooldownLocation = 8.0;
         private const double NVBGCooldownAudio = 3.0;
 
-        private static string AzureSubscriptionKey = "b6ba5313943f4393abaa37e28a45de51";
+        // private static string AzureSubscriptionKey = "b6ba5313943f4393abaa37e28a45de51";
+        private static string AzureSubscriptionKey = "09186ea05c6a4b6eb4e33971f1976172";
         private static string AzureRegion = "eastus";
         public static readonly object SendToBazaarLock = new object();
         public static readonly object SendToPythonLock = new object();
@@ -99,9 +100,9 @@ namespace SigdialDemo
         public static CameraInfo VhtInfo;
         // private readonly Merger<Message<string>, int> merger;
 
-        public static String remoteIP;
-
         // TEMPORARY
+
+        public static String remoteIP = "tcp://128.2.212.138:40000";
         public static String audio_channel = "tcp://128.2.212.138:40001"; 
         public static String doa = "tcp://128.2.212.138:40002"; 
         public static String nanoVad = "tcp://128.2.212.138:40003"; 
@@ -171,20 +172,20 @@ namespace SigdialDemo
         // ...
         public static void RunDemo()
         {
-            String remoteIP;
             // String localIP = "tcp://127.0.0.1:40003";
             NanoIPs ips;
 
-            using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
-            {
-                var message = responseSocket.ReceiveFrameString();
-                Console.WriteLine("RunDemoWithRemoteMultipart, responseSocket received '{0}'", message);
-                responseSocket.SendFrame(message);
-                remoteIP = message; 
-                // ips = JsonConvert.DeserializeObject<NanoIPs>(message);
-                // remoteIP = ips.remoteIP;
-                Console.WriteLine("RunDemoWithRemoteMultipart: remoteIP = '{0}'", remoteIP);
-            }
+            // String remoteIP;
+            // using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
+            // {
+            //     var message = responseSocket.ReceiveFrameString();
+            //     Console.WriteLine("RunDemoWithRemoteMultipart, responseSocket received '{0}'", message);
+            //     responseSocket.SendFrame(message);
+            //     remoteIP = message; 
+            //     // ips = JsonConvert.DeserializeObject<NanoIPs>(message);
+            //     // remoteIP = ips.remoteIP;
+            //     Console.WriteLine("RunDemoWithRemoteMultipart: remoteIP = '{0}'", remoteIP);
+            // }
             Thread.Sleep(1000);
 
 
@@ -251,7 +252,7 @@ namespace SigdialDemo
                     nanoVad,                // TEMPORARY
                 MessagePackFormat.Instance);
 
-                var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio.wav");
+                var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_05-14-b.wav");
 
                 // processing audio and DOA input, and saving to file
                 // audioFromNano contains binary array data, needs to be converted to PSI compatible AudioBuffer format
@@ -278,23 +279,28 @@ namespace SigdialDemo
                 // audioInAudioBufferFormat = inputStore.OpenStream<AudioBuffer>("Audio");  // replaced microphone with audioInAudioBufferFormat
 
                 var acousticFeaturesExtractor = new AcousticFeaturesExtractor(p);
+                Console.WriteLine($"Piping to AcousticFeaturesExtractor");
                 audioInAudioBufferFormat.PipeTo(acousticFeaturesExtractor);  // replaced microphone with audioInAudioBufferFormat
 
                 // Display the log energy
-                acousticFeaturesExtractor.LogEnergy
-                    .Sample(TimeSpan.FromSeconds(0.2))
-                    .Do(logEnergy => Console.WriteLine($"LogEnergy = {logEnergy}"));
+                // acousticFeaturesExtractor.LogEnergy
+                //     .Sample(TimeSpan.FromSeconds(0.2))
+                //     .Do(logEnergy => Console.WriteLine($"LogEnergy = {logEnergy}"));
 
                 // Create a voice-activity stream by thresholding the log energy
+
+                Console.WriteLine($"Creating vad");
                 var vad = acousticFeaturesExtractor.LogEnergy
                     .Select(l => l > 7);
                 
                 // Create filtered signal by aggregating over historical buffers
+                Console.WriteLine($"Creating vadWithHistory");
                 var vadWithHistory = acousticFeaturesExtractor.LogEnergy
                     .Window(RelativeTimeInterval.Future(TimeSpan.FromMilliseconds(300)))
                     .Aggregate(false, (previous, buffer) => (!previous && buffer.All(v => v > 7)) || (previous && !buffer.All(v => v < 7)));
 
                 // Write the microphone output, VAD streams, and some acoustic features to the store
+                Console.WriteLine($"Writing to store");
                 var store = PsiStore.Create(p, "SimpleVAD", Path.Combine(Directory.GetCurrentDirectory(), "Stores"));
                 audioInAudioBufferFormat.Write("Audio", store);
                 vad.Write("VAD", store);
@@ -321,12 +327,14 @@ namespace SigdialDemo
                 //     return (x.Item1, x.Item2 == 1);
                 // });
 
+                Console.WriteLine($"Joining audioInAudioBufferFormat with vadWithHistory");
                 var annotatedAudio = audioInAudioBufferFormat.Join(vadWithHistory); 
 
 
                 // var vad = new SystemVoiceActivityDetector(p);
                 // audioInAudioBufferFormat.PipeTo(vad);
 
+                Console.WriteLine($"Creating Azure recognizer");
                 var recognizer = new AzureSpeechRecognizer(p, new AzureSpeechRecognizerConfiguration()
                 {
                     SubscriptionKey = Program.AzureSubscriptionKey,
@@ -338,6 +346,8 @@ namespace SigdialDemo
 
                 // To CHECK: What is being sent to Azure? Full audio or only voice activity audio segments? What are we being charged for, the time the ASR system is running or the audio duration being sent.
 
+
+                Console.WriteLine($"Piping to Azure recognizer code");
                 annotatedAudio.PipeTo(recognizer);
 
                 // "this is text transcription .... here the transcription is over [FINAL]."
