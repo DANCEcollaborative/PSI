@@ -188,31 +188,6 @@ namespace SigdialDemo
                 // Subscribe to messages from remote sensor using NetMQ (ZeroMQ)
                 // var nmqSubFromSensor = new NetMQSubscriber<string>(p, "", remoteIP, MessagePackFormat.Instance, useSourceOriginatingTimes = true, name="Sensor to PSI");
                 // var nmqSubFromSensor = new NetMQSubscriber<string>(p, "", remoteIP, JsonFormat.Instance, true, "Sensor to PSI");
-
-                // AUDIO SETUP
-                var format = WaveFormat.Create16BitPcm(16000, 1);
-
-                // binary data stream
-                var audioFromNano = new NetMQSource<byte[]>(
-                    p,
-                    "temp",
-                    audio_channel,
-                    MessagePackFormat.Instance);
-
-                // DOA - Direction of Arrival (of sound, int values range from 0 to 360)
-                var doaFromNano = new NetMQSource<int>(
-                    p,
-                    "temp2",
-                    doa,
-                    MessagePackFormat.Instance);
-
-                // VAD - Voice Activity Detection
-                var vadFromNano = new NetMQSource<int>(
-                    p,
-                    "temp3",
-                    nanoVad,
-                MessagePackFormat.Instance);
-
                 // other messages
                 var nmqSubFromSensor = new NetMQSubscriber<IDictionary<string, object>>(p, "", remoteIP, MessagePackFormat.Instance, true, "Sensor to PSI");
 
@@ -243,6 +218,30 @@ namespace SigdialDemo
                     return m;
                 }).PipeTo(nmqPubToAgent);
 
+                // AUDIO SETUP
+                var format = WaveFormat.Create16BitPcm(16000, 1);
+
+                // binary data stream
+                var audioFromNano = new NetMQSource<byte[]>(
+                    p,
+                    "temp",
+                    audio_channel,
+                    MessagePackFormat.Instance);
+
+                // DOA - Direction of Arrival (of sound, int values range from 0 to 360)
+                var doaFromNano = new NetMQSource<int>(
+                    p,
+                    "temp2",
+                    doa,
+                    MessagePackFormat.Instance);
+
+                // VAD - Voice Activity Detection
+                var vadFromNano = new NetMQSource<int>(
+                    p,
+                    "temp3",
+                    nanoVad,
+                MessagePackFormat.Instance);
+
                 // processing audio and DOA input, and saving to file
                 // audioFromNano contains binary array data, needs to be converted to PSI compatible AudioBuffer format
                 var audioInAudioBufferFormat = audioFromNano
@@ -265,6 +264,9 @@ namespace SigdialDemo
                 //     Console.WriteLine($"{x.Item1.Data.Length} {x.Item2}");
                 // });
 
+                // var vad = new SystemVoiceActivityDetector(p);
+                // audioInAudioBufferFormat.PipeTo(vad);
+
                 // Voice Activity Detection - needed to detect when voice activity is taking place in audio
                 // TODO: if voice activity is in azure
                 var annotatedAudio = audioInAudioBufferFormat.Join(vadFromNano, TimeSpan.FromMilliseconds(100)).Select(x =>
@@ -272,9 +274,6 @@ namespace SigdialDemo
                     return (x.Item1, x.Item2 == 1);
                 });
 
-
-                // var vad = new SystemVoiceActivityDetector(p);
-                // audioInAudioBufferFormat.PipeTo(vad);
 
                 var recognizer = new AzureSpeechRecognizer(p, new AzureSpeechRecognizerConfiguration()
                 {
