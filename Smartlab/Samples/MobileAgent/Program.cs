@@ -205,7 +205,6 @@ namespace SigdialDemo
                 // mergeToAgent.Select(m => m.Data).PipeTo(nmqPubToAgent); 
                 mergeToAgent.Select(m =>
                 {
-                    Console.WriteLine($"Line 198 ->");
                     Console.WriteLine(m);
                     return m;
                 }).PipeTo(nmqPubToAgent);
@@ -259,7 +258,6 @@ namespace SigdialDemo
                 // audioInAudioBuffer = inputStore.OpenStream<AudioBuffer>("Audio");  // replaced microphone with audioInAudioBuffer
 
                 var acousticFeaturesExtractor = new AcousticFeaturesExtractor(p);
-                Console.WriteLine($"Piping to AcousticFeaturesExtractor");
                 audioInAudioBuffer.PipeTo(acousticFeaturesExtractor);  // replaced microphone with audioInAudioBuffer
 
                 // Display the log energy
@@ -269,12 +267,10 @@ namespace SigdialDemo
                     // .Do(logEnergy => Console.WriteLine($"LogEnergy = {logEnergy}"));
 
                 // Create a voice-activity stream by thresholding the log energy
-                Console.WriteLine($"Creating vad");
                 var vad = acousticFeaturesExtractor.LogEnergy
                     .Select(l => l > 10);
                 
                 // Create filtered signal by aggregating over historical buffers
-                Console.WriteLine($"Creating vadWithHistory");
                 var vadWithHistory = acousticFeaturesExtractor.LogEnergy
                     .Window(RelativeTimeInterval.Future(TimeSpan.FromMilliseconds(300)))
                     .Aggregate(false, (previous, buffer) => (!previous && buffer.All(v => v > 10)) || (previous && !buffer.All(v => v < 10)));
@@ -312,8 +308,10 @@ namespace SigdialDemo
                 var finalResults = recognizer.Out.Where(result => result.IsFinal);
                 finalResults.Do((IStreamingSpeechRecognitionResult result, Envelope envelope) =>
                 {
-                    Console.WriteLine($"Send text message to Bazaar: {result.Text}");
-                    // place to add code for further communication with other systems
+                    string text = result.Text; 
+                    if (!string.IsNullOrWhiteSpace(text)) {
+                        Console.WriteLine($"Send text message to Bazaar: {text}");
+                    }
                 });
                 // ^^^ AUDIO SETUP ^^^
                 // ======================================================================================
