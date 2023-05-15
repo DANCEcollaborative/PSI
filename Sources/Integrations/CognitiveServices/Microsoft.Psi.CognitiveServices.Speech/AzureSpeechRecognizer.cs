@@ -164,10 +164,8 @@ namespace Microsoft.Psi.CognitiveServices.Speech
         /// <returns>The <see cref="Task"/> representing the asynchronous operation.</returns>
         protected override async Task ReceiveAsync((AudioBuffer, bool) data, Envelope e)
         {
-            Console.WriteLine("AzureSpeechRecognize.ReceiveAsync - enter");
             byte[] audioData = data.Item1.Data;
             bool hasSpeech = data.Item2;
-            Console.WriteLine($"AzureSpeechRecognize.ReceiveAsync - hasSpeech: {hasSpeech.ToString()}");
 
             if (this.lastAudioOriginatingTime == default)
             {
