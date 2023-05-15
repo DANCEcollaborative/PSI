@@ -225,7 +225,9 @@ namespace SigdialDemo
                     return m;
                 }).PipeTo(nmqPubToAgent);
 
-
+                // ======================================================================================
+                // ======================================================================================
+                // ======================================================================================
                 // AUDIO SETUP
                 var format = WaveFormat.Create16BitPcm(16000, 1);
                 // var format = WaveFormat.Create16kHz1Channel16BitPcm(); // Is this equivalent to above?
@@ -268,7 +270,8 @@ namespace SigdialDemo
                 // saving to audio file
                 audioInAudioBufferFormat.PipeTo(saveToWavFile);
 
-
+                // var vad = new SystemVoiceActivityDetector(p);
+                // audioInAudioBufferFormat.PipeTo(vad);
                 // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                 // vvvvvvvvvvvv From psi-samples SimpleVoiceActivityDetector vvvvvvvvvvvvvv
                 // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -283,15 +286,16 @@ namespace SigdialDemo
                 audioInAudioBufferFormat.PipeTo(acousticFeaturesExtractor);  // replaced microphone with audioInAudioBufferFormat
 
                 // Display the log energy
-                // acousticFeaturesExtractor.LogEnergy
-                //     .Sample(TimeSpan.FromSeconds(0.2))
-                //     .Do(logEnergy => Console.WriteLine($"LogEnergy = {logEnergy}"));
+                acousticFeaturesExtractor.LogEnergy
+                    .Sample(TimeSpan.FromSeconds(0.2))
+                    .Do(logEnergy => Console.WriteLine($"LogEnergy = {logEnergy}"));
 
                 // Create a voice-activity stream by thresholding the log energy
 
                 Console.WriteLine($"Creating vad");
                 var vad = acousticFeaturesExtractor.LogEnergy
-                    .Select(l => l > 7);
+                    .Select(l => l > 10);
+                    // .Select(l => l > 7);
                 
                 // Create filtered signal by aggregating over historical buffers
                 Console.WriteLine($"Creating vadWithHistory");
@@ -327,12 +331,10 @@ namespace SigdialDemo
                 //     return (x.Item1, x.Item2 == 1);
                 // });
 
-                Console.WriteLine($"Joining audioInAudioBufferFormat with vadWithHistory");
-                var annotatedAudio = audioInAudioBufferFormat.Join(vadWithHistory); 
-
-
-                // var vad = new SystemVoiceActivityDetector(p);
-                // audioInAudioBufferFormat.PipeTo(vad);
+                // Console.WriteLine($"Joining audioInAudioBufferFormat with vadWithHistory");
+                // var annotatedAudio = audioInAudioBufferFormat.Join(vadWithHistory); 
+                Console.WriteLine($"Joining audioInAudioBufferFormat with vad");
+                var annotatedAudio = audioInAudioBufferFormat.Join(vad); 
 
                 Console.WriteLine($"Creating Azure recognizer");
                 var recognizer = new AzureSpeechRecognizer(p, new AzureSpeechRecognizerConfiguration()
@@ -346,7 +348,6 @@ namespace SigdialDemo
 
                 // To CHECK: What is being sent to Azure? Full audio or only voice activity audio segments? What are we being charged for, the time the ASR system is running or the audio duration being sent.
 
-
                 Console.WriteLine($"Piping to Azure recognizer code");
                 annotatedAudio.PipeTo(recognizer);
 
@@ -357,6 +358,10 @@ namespace SigdialDemo
                     Console.WriteLine($"Send text message to Bazaar: {result.Text}");
                     // place to add code for further communication with other systems
                 });
+
+                // ======================================================================================
+                // ======================================================================================
+                // ======================================================================================
 
                 p.RunAsync();
                 Console.ReadKey();
