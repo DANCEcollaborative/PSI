@@ -285,6 +285,7 @@ namespace SigdialDemo
                 // VAD [0, 0, 1, 1, 1, 1,................, 0, 0] (same length as above)
 
                 // To CHECK: What is being sent to Azure? Full audio or only voice activity audio segments? What are we being charged for, the time the ASR system is running or the audio duration being sent.
+                // >>> Only audio for which VAD == true is sent to Azure
 
                 annotatedAudio.PipeTo(recognizer);
 
@@ -292,7 +293,13 @@ namespace SigdialDemo
                 var finalResults = recognizer.Out.Where(result => result.IsFinal);
                 finalResults.Do((IStreamingSpeechRecognitionResult result, Envelope envelope) =>
                 {
-                    Console.WriteLine($"Send text message to Bazaar: {result.Text}");
+                    String text = result.Text;
+                    if (string.IsNullOrWhiteSpace(text)) {
+                        Console.WriteLine("NOT sending blank text message to Bazaar"); 
+                    } else {
+                        Console.WriteLine($"Sending text message to Bazaar: {result.Text}");
+                    }
+
                     // place to add code for further communication with other systems
                 });
 
