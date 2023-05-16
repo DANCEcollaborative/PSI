@@ -31,7 +31,6 @@
     <ProjectReference Include="..\..\Sources\Communication\CMU.Smartlab.Communication.csproj"/>
     <ProjectReference Include="..\..\Sources\Identity\CMU.Smartlab.Identity.csproj"/>
     <ProjectReference Include="..\..\..\Sources\Integrations\CognitiveServices\Test.Psi.CognitiveServices.Speech\Test.Psi.CognitiveServices.Speech.csproj"/>
-    <!-- <ProjectReference Include="..\..\..\Samples\SimpleVoiceActivityDetector\SimpleVoiceActivityDetector.csproj"/> -->
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MathNet.Spatial.Signed" Version="0.6.0"/>

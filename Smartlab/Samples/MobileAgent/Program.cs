@@ -327,22 +327,20 @@ namespace SigdialDemo
             using (var responseSocket = new ResponseSocket("@tcp://*:40001"))
             using (var requestSocket = new RequestSocket(">tcp://localhost:40001"))
             using (var p = Pipeline.Create())
-                for (; ; )
-                {
-                    {
-                        var mq = new NetMQSource<string>(p, "test-topic", "tcp://localhost:45678", JsonFormat.Instance);
-                        Console.WriteLine("requestSocket : Sending 'Hello'");
-                        requestSocket.SendFrame(">>>>> Hello from afar! <<<<<<");
-                        var message = responseSocket.ReceiveFrameString();
-                        Console.WriteLine("responseSocket : Server Received '{0}'", message);
-                        Console.WriteLine("responseSocket Sending 'Hibackatcha!'");
-                        responseSocket.SendFrame("Hibackatcha!");
-                        message = requestSocket.ReceiveFrameString();
-                        Console.WriteLine("requestSocket : Received '{0}'", message);
-                        Console.ReadLine();
-                        Thread.Sleep(1000);
-                    }
-                }
+            for (;;) 
+            {
+				var mq = new NetMQSource<string>(p, "test-topic", "tcp://localhost:45678", JsonFormat.Instance); 
+				Console.WriteLine("requestSocket : Sending 'Hello'");
+				requestSocket.SendFrame(">>>>> Hello from afar! <<<<<<");
+				var message = responseSocket.ReceiveFrameString();
+				Console.WriteLine("responseSocket : Server Received '{0}'", message);
+				Console.WriteLine("responseSocket Sending 'Hibackatcha!'");
+				responseSocket.SendFrame("Hibackatcha!");
+				message = requestSocket.ReceiveFrameString();
+				Console.WriteLine("requestSocket : Received '{0}'", message);
+				Console.ReadLine();
+				Thread.Sleep(1000);
+            }
         }
 
 
@@ -360,17 +358,14 @@ namespace SigdialDemo
             String received = "";
 
             // Testing send & receive over same socket
-            for (; ; )
-            {
-                for (; ; )
-                {
-                    pubSocket.SendFrame("Howdy from NetMQ!", false);
-                    Console.WriteLine("About to try subSocket.ReceiveFrameString");
-                    received = subSocket.ReceiveFrameString();
-                    if (received == "")
-                    {
-                        Console.WriteLine("Received nothing");
-                        continue;
+            for (;;) {
+                for (;;) {
+                    pubSocket.SendFrame( "Howdy from NetMQ!", false );
+                    Console.WriteLine( "About to try subSocket.ReceiveFrameString");
+                    received = subSocket.ReceiveFrameString(); 
+                    if  (received == "") {
+                        Console.WriteLine( "Received nothing");
+                        continue; 
                     }
                     Console.WriteLine("Received something");
                     break;
