@@ -113,31 +113,54 @@ namespace CMU.Smartlab.Communication
         private static string stringForAgent(object message)
         { 
             IDictionary<string,object> dictionaryIn = (IDictionary<string,object>)message; 
-            string response = null;
+            string speech = null;
             string location = null; 
             foreach (KeyValuePair<string,object> kvp in dictionaryIn) {
                 Console.WriteLine("NetMQPublisher.processIDictionary: message - key: '{0}'  --  value: '{1}'", kvp.Key,kvp.Value); 
                 if (kvp.Key == "location") {
                     location = (string)kvp.Value; 
                 }
-                if (kvp.Key == "response") {
-                    response = (string)kvp.Value; 
+                if (kvp.Key == "speech") {
+                    speech = (string)kvp.Value; 
                 }
             }
-            if (response != null) {
-                return response;
+            if (speech != null) {
+                return "speech:" + speech;
             } else if (location != null) {
-                // return location; 
-                if (location == "left") {
-                    return "Rachel is looking left";
-                } else if (location == "front") {
-                    return "Rachel is looking straight ahead";
-                } else if (location == "right") {
-                    return "Rachel is looking right";
-                } else {
-                    Console.WriteLine($"NetMQPublisher.stringForAgent - unexpected location value: '{0}'", location);
-                    return null;
+                return "location:" + location; 
+                // if (location == "left") {
+                //     return "Rachel is looking left";
+                // } else if (location == "front") {
+                //     return "Rachel is looking straight ahead";
+                // } else if (location == "right") {
+                //     return "Rachel is looking right";
+                // } else {
+                //     Console.WriteLine($"NetMQPublisher.stringForAgent - unexpected location value: '{0}'", location);
+                //     return null;
+                // }
+            } else {
+                return null; 
+            }
+        }
+
+        private static IDictionary<string,string> messageForAgent(object message)
+        { 
+            IDictionary<string,object> dictionaryIn = (IDictionary<string,object>)message; 
+            IDictionary<string,string> dictionaryOut = new Dictionary<string, string>(); 
+            Boolean messageFound = false; 
+            foreach (KeyValuePair<string,object> kvp in dictionaryIn) {
+                Console.WriteLine("NetMQPublisher.processIDictionary: message - key: '{0}'  --  value: '{1}'", kvp.Key,kvp.Value); 
+                if (kvp.Key == "location") {
+                    dictionaryOut.Add("location",(string)kvp.Value); 
+                    messageFound = true; 
                 }
+                if (kvp.Key == "speech") {
+                    dictionaryOut.Add("speech",(string)kvp.Value); 
+                    messageFound = true; 
+                }
+            }
+            if (messageFound) {
+                return dictionaryOut;
             } else {
                 return null; 
             }
@@ -149,6 +172,7 @@ namespace CMU.Smartlab.Communication
         {
             string topic = topics.Keys.First(); 
             Console.WriteLine($"NetMQPublisher.ReceiveIDictionary - enter - topic = '{0}'", topic);
+            // IDictionary<string,string> messageToAgent = messageForAgent(messageIn); 
             string messageToAgent = stringForAgent(messageIn); 
             if (messageToAgent != null) {      
                 // var (bytes, index, length) = this.serializer.SerializeMessage(messageIn, envelope.OriginatingTime);   
