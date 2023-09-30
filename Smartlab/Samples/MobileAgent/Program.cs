@@ -49,6 +49,8 @@ namespace SigdialDemo
         public string doa { get; set; }
         public string vad { get; set; }
         public string remoteIP { get; set; }
+        public string cvPreds { get; set; }
+        public string images { get; set; }
     }
     public class Program
     {
@@ -64,13 +66,21 @@ namespace SigdialDemo
         private const string TopicToAgent = "PSI_Agent_Text";
         private const string TopicFromSensor = "Sensor_PSI_Text";
         private const string TopicFaceOrientation = "face-orientation";
+        private const string TopicAgentResp= "agent-response";
+        private const string TopicSendAudioToPython = "audio-psi-to-python";
+        private const string TopicRespChatGPT = "chatgpt-responses";
+
+        private const string TopicCVPreds = "cv-preds";
+        private const string TopicImages = "images";
+
+
 
         private const int SendingImageWidth = 360;
         private const int MaxSendingFrameRate = 15;
         private const string TcpIPResponder = "@tcp://*:40001";
-        // private const string TcpIPPublisher = "tcp://*:40002";
-        private const string TcpIPPublisher = "tcp://*:30002";
-        // private const string TcpIPPublisher = "tcp://*:5500";
+        private const string TcpIPPublisher = "tcp://*:40002";
+        private const string TcpIPPublisherSendAudio = "tcp://*:40003";
+
 
 
         private const double SocialDistance = 183;
@@ -78,7 +88,8 @@ namespace SigdialDemo
         private const double NVBGCooldownLocation = 8.0;
         private const double NVBGCooldownAudio = 3.0;
 
-        private static string AzureSubscriptionKey = "b6ba5313943f4393abaa37e28a45de51";
+        private static string AzureSubscriptionKey = "165ea78f5c7f44bd9d31f07d0f319cc7";
+        // private static string AzureSubscriptionKey = "b6ba5313943f4393abaa37e28a45de51";
         private static string AzureRegion = "eastus";
         public static readonly object SendToBazaarLock = new object();
         public static readonly object SendToPythonLock = new object();
@@ -160,6 +171,16 @@ namespace SigdialDemo
         }
 
         // ...
+        public void PrintByteArray(byte[] bytes)
+        {
+            var sb = new StringBuilder("new byte[] { ");
+            foreach (var b in bytes)
+            {
+                sb.Append(b + ", ");
+            }
+            sb.Append("}");
+            Console.WriteLine(sb.ToString());
+        }
         public static void RunDemo()
         {
             String remoteIP;
@@ -173,6 +194,7 @@ namespace SigdialDemo
                 responseSocket.SendFrame(message);
                 ips = JsonConvert.DeserializeObject<NanoIPs>(message);
                 remoteIP = ips.remoteIP;
+                Console.WriteLine(ips);
                 Console.WriteLine("RunDemoWithRemoteMultipart: remoteIP = '{0}'", remoteIP);
             }
             Thread.Sleep(1000);
@@ -180,10 +202,6 @@ namespace SigdialDemo
 
             using (var p = Pipeline.Create())
             {
-                // Subscribe to messages from remote sensor using NetMQ (ZeroMQ)
-                // var nmqSubFromSensor = new NetMQSubscriber<string>(p, "", remoteIP, MessagePackFormat.Instance, useSourceOriginatingTimes = true, name="Sensor to PSI");
-                // var nmqSubFromSensor = new NetMQSubscriber<string>(p, "", remoteIP, JsonFormat.Instance, true, "Sensor to PSI");
-
                 // AUDIO SETUP
                 var format = WaveFormat.Create16BitPcm(16000, 1);
 
@@ -200,95 +218,51 @@ namespace SigdialDemo
                     "temp2",
                     ips.doa,
                     MessagePackFormat.Instance);
+
                 var vadFromNano = new NetMQSource<int>(
                     p,
                     "temp3",
                     ips.vad,
-                MessagePackFormat.Instance);
-                var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_2.wav");
+                    MessagePackFormat.Instance);
 
-                // other messages
-                var nmqSubFromSensor = new NetMQSubscriber<IDictionary<string, object>>(p, "", remoteIP, MessagePackFormat.Instance, true, "Sensor to PSI");
+                var chatGPTResponse = new NetMQSource<string>(
+                    p,
+                    TopicRespChatGPT,
+                    "tcp://127.0.0.1:50001",
+                    MessagePackFormat.Instance);
 
-                // Create a publisher for messages from the sensor to Bazaar
-                var amqPubSensorToBazaar = new AMQPublisher<IDictionary<string, object>>(p, TopicFromSensor, TopicToBazaar, "Sensor to Bazaar");
+                var cvPreds = new NetMQSource<float[]>(
+                    p,
+                    TopicCVPreds,
+                    ips.cvPreds,
+                    MessagePackFormat.Instance);
 
-                // Subscribe to messages from Bazaar for the agent
-                var amqSubBazaarToAgent = new AMQSubscriber<IDictionary<string, object>>(p, TopicFromBazaar, TopicToAgent, "Bazaar to Agent");
+                var images = new NetMQSource<int[][]>(
+                    p,
+                    TopicImages,
+                    ips.images,
+                    MessagePackFormat.Instance);
+
+                images.Do(resp=>{
+                    Console.WriteLine("image", resp.Length);
+                })
+
+                cvPreds.Do(resp=>{
+                    Console.WriteLine("[{0}]", string.Join(", ", resp));
+                })
+                    
+                chatGPTResponse.Do(t=>{
+                    Console.WriteLine(t);
+                });
+
+                // var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_2.wav");
 
                 // Create a publisher for messages to the agent using NetMQ (ZeroMQ)
-                var nmqPubToAgent = new NetMQPublisher<IDictionary<string, object>>(p, TopicFaceOrientation, TcpIPPublisher, MessagePackFormat.Instance);
-                // nmqPubToAgent.Do(x => Console.WriteLine("RunDemoWithRemoteMultipart, nmqPubToAgent.Do: {0}", x));
+                var nmqPubToAgent = new NetMQWriter<string>(p, TopicFaceOrientation, TcpIPPublisher, MessagePackFormat.Instance);
+                chatGPTResponse.PipeTo(nmqPubToAgent);
 
-                // Route messages from the sensor to Bazaar
-                nmqSubFromSensor.PipeTo(amqPubSensorToBazaar.IDictionaryIn);
-
-                // Combine messages (1) direct from sensor, and (2) from Bazaar, and send to agent
-                SmartlabMerge<IDictionary<string, object>> mergeToAgent = new SmartlabMerge<IDictionary<string, object>>(p, "Merge to Agent");
-                var receiverSensor = mergeToAgent.AddInput("Sensor to PSI");
-                var receiverBazaar = mergeToAgent.AddInput("Bazaar to Agent");
-                nmqSubFromSensor.PipeTo(receiverSensor);
-                amqSubBazaarToAgent.PipeTo(receiverBazaar);
-                // mergeToAgent.Select(m => m.Data).PipeTo(nmqPubToAgent); 
-                mergeToAgent.Select(m =>
-                {
-                    Console.WriteLine($"Line 198 ->");
-                    Console.WriteLine(m);
-                    return m;
-                }).PipeTo(nmqPubToAgent);
-
-                // processing audio and DOA input, and saving to file
-                // audioFromNano contains binary array data, needs to be converted to PSI compatible AudioBuffer format
-                var audioInAudioBufferFormat = audioFromNano
-                    .Select(t =>
-                    {
-                        var ab = new AudioBuffer(t, format);
-                        // Console.WriteLine(ab.Data.Length);
-                        // Console.WriteLine(t.Data);
-                        return ab;
-                    });
-
-                // saving to audio file
-                audioInAudioBufferFormat.PipeTo(saveToWavFile);
-
-                // TODO: save the joint AudioBuffer and DOA stream to file
-                var joinedStream = audioInAudioBufferFormat.Join(doaFromNano, TimeSpan.FromMilliseconds(100));
-                // joinedStream.Do(x =>
-                // {
-                //     Console.WriteLine($"{x.Item1.Data.Length} {x.Item2}");
-                // });
-
-                // Voice Activity Detection - needed to detect when voice activity is taking place in audio
-                // TODO: if voice activity is in azure
-                var annotatedAudio = audioInAudioBufferFormat.Join(vadFromNano, TimeSpan.FromMilliseconds(100)).Select(x =>
-                {
-                    return (x.Item1, x.Item2 == 1);
-                });
-
-
-                // var vad = new SystemVoiceActivityDetector(p);
-                // audioInAudioBufferFormat.PipeTo(vad);
-
-                var recognizer = new AzureSpeechRecognizer(p, new AzureSpeechRecognizerConfiguration()
-                {
-                    SubscriptionKey = Program.AzureSubscriptionKey,
-                    Region = Program.AzureRegion
-                });
-
-                // AUDIO [10, 283, 3972, 74.0397, ........., 835.3, 493.8]
-                // VAD [0, 0, 1, 1, 1, 1,................, 0, 0] (same length as above)
-
-                // To CHECK: What is being sent to Azure? Full audio or only voice activity audio segments? What are we being charged for, the time the ASR system is running or the audio duration being sent.
-
-                annotatedAudio.PipeTo(recognizer);
-
-                // "this is text transcription .... here the transcription is over [FINAL]."
-                var finalResults = recognizer.Out.Where(result => result.IsFinal);
-                finalResults.Do((IStreamingSpeechRecognitionResult result, Envelope envelope) =>
-                {
-                    Console.WriteLine($"Send text message to Bazaar: {result.Text}");
-                    // place to add code for further communication with other systems
-                });
+                var nmqSendAudioToPythonBE = new NetMQWriter<byte[]>(p, TopicSendAudioToPython, TcpIPPublisherSendAudio, MessagePackFormat.Instance);
+                audioFromNano.PipeTo(nmqSendAudioToPythonBE);
 
                 p.Run();
 
