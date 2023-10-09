@@ -52,6 +52,9 @@ namespace SigdialDemo
         public string cvPreds { get; set; }
         public string images { get; set; }
     }
+    public class TTSInvocation {
+        public string tts_invoked {get; set;}
+    }
     public class Program
     {
         private const string AppName = "SmartLab Project - Demo v3.0 (for SigDial Demo)";
@@ -68,9 +71,13 @@ namespace SigdialDemo
         private const string TopicFaceOrientation = "face-orientation";
         private const string TopicAgentResp= "agent-response";
         private const string TopicSendAudioToPython = "audio-psi-to-python";
+        private const string TopicSendImagesToPython = "images-psi-to-python";
+        private const string TopicSendCVPredsToPython = "cv-preds-psi-to-python";
+        private const string TopicSendTTSInvToPython = "tts-inv-psi-to-python";
         private const string TopicRespChatGPT = "chatgpt-responses";
 
         private const string TopicCVPreds = "cv-preds";
+        private const string TopicTTSInvocations = "fe-tts";
         private const string TopicImages = "images";
 
 
@@ -80,6 +87,10 @@ namespace SigdialDemo
         private const string TcpIPResponder = "@tcp://*:40001";
         private const string TcpIPPublisher = "tcp://*:40002";
         private const string TcpIPPublisherSendAudio = "tcp://*:40003";
+        private const string TcpIPPublisherSendImages = "tcp://*:40004";
+        private const string TcpIPPublisherSendCVPreds = "tcp://*:40005";
+        private const string TcpIPPublisherSendTTSInv = "tcp://*:40006";
+        
 
 
 
@@ -231,26 +242,35 @@ namespace SigdialDemo
                     "tcp://127.0.0.1:50001",
                     MessagePackFormat.Instance);
 
-                var cvPreds = new NetMQSource<float[]>(
+                var cvPreds = new NetMQSource<byte[]>(
                     p,
                     TopicCVPreds,
-                    ips.cvPreds,
+                    "tcp://127.0.0.1:61001",
+                    // ips.cvPreds,
                     MessagePackFormat.Instance);
+                cvPreds.Do(resp=>{
+                    Console.WriteLine("Received cv preds");
+                    Console.WriteLine(resp.Length);
+                });
 
-                var images = new NetMQSource<int[][]>(
+                var images = new NetMQSource<byte[]>(
                     p,
                     TopicImages,
                     ips.images,
                     MessagePackFormat.Instance);
 
                 images.Do(resp=>{
-                    Console.WriteLine("image", resp.Length);
-                })
+                    Console.WriteLine(resp.Length);
+                });
+                
+                var ttsInvocations = new NetMQSource<string>(
+                    p,
+                    TopicTTSInvocations,
+                    "tcp://127.0.0.1:41000",
+                    // ips.cvPreds,
+                    MessagePackFormat.Instance);
 
-                cvPreds.Do(resp=>{
-                    Console.WriteLine("[{0}]", string.Join(", ", resp));
-                })
-                    
+                ttsInvocations.Do(t=>{Console.WriteLine(t);});
                 chatGPTResponse.Do(t=>{
                     Console.WriteLine(t);
                 });
@@ -263,6 +283,15 @@ namespace SigdialDemo
 
                 var nmqSendAudioToPythonBE = new NetMQWriter<byte[]>(p, TopicSendAudioToPython, TcpIPPublisherSendAudio, MessagePackFormat.Instance);
                 audioFromNano.PipeTo(nmqSendAudioToPythonBE);
+
+                var nmqSendImagesToPythonBE = new NetMQWriter<byte[]>(p, TopicSendImagesToPython, TcpIPPublisherSendImages, MessagePackFormat.Instance);
+                images.PipeTo(nmqSendImagesToPythonBE);
+
+                var nmqSendCVPredsToPythonBE = new NetMQWriter<byte[]>(p, TopicSendCVPredsToPython, TcpIPPublisherSendCVPreds, MessagePackFormat.Instance);
+                cvPreds.PipeTo(nmqSendCVPredsToPythonBE);
+
+                var nmqSendTTSInvToPythonBE = new NetMQWriter<string>(p, TopicSendTTSInvToPython, TcpIPPublisherSendTTSInv, MessagePackFormat.Instance);
+                ttsInvocations.PipeTo(nmqSendTTSInvToPythonBE);
 
                 p.Run();
 
