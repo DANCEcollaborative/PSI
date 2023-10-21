@@ -430,13 +430,63 @@
 
         public static void RunDemo(bool AudioOnly = false, string cameraType = "webcam")
         {
-            using (Pipeline pipeline = Pipeline.Create())
-            {
-                pipeline.PipelineExceptionNotHandled += Pipeline_PipelineException;
-                pipeline.PipelineCompleted += Pipeline_PipelineCompleted;
+            String remoteIP; 
+            Console.WriteLine("Waiting for ip of remote device...");
+            using (var responseSocket = new ResponseSocket("@tcp://*:40001")) {
+                var message = responseSocket.ReceiveFrameString();
+                Console.WriteLine("RunDemoWithRemoteMultipart, responseSocket received '{0}'", message);
+                responseSocket.SendFrame(message);
+                remoteIP = message; 
+                Console.WriteLine("RunDemoWithRemoteMultipart: remoteIP = '{0}'", remoteIP);
+            }
 
-                // var store = Store.Open(pipeline, Program.LogName, Program.LogPath);
-                // Send video part to Python
+            Thread.Sleep(1000); 
+            
+            using (var p = Pipeline.Create())
+            {
+                // using (var pubSocket = new PublisherSocket())
+                // {
+                //     Console.WriteLine("Publisher socket binding...");
+                //     pubSocket.Options.SendHighWatermark = 1000;
+                //     pubSocket.Bind(TcpIPPublisher);
+                //     for (var i = 1; i < 101; i++)
+                //     {
+                //         var msg = "Message " + i;
+                //         Console.WriteLine("Sending message : {0}", msg);
+                //         pubSocket.SendMoreFrame(TopicToRemote).SendFrame(msg);
+                //         Thread.Sleep(500);
+                //     }
+                // }
+
+                var nmqSub = new NetMQSubscriber<string>(p, "", remoteIP, JsonFormat.Instance);
+
+                // var nmqSub = new NetMQSubscriber<string>(p, "", localIP, JsonFormat.Instance);
+                // var nmqSub = new NetMQSource<string>(p, "", remoteIP, JsonFormat.Instance);
+                // var nmqSub = new NetMQSource<string>(p, TopicFromRemote, remoteIP, JsonFormat.Instance);
+                // var nmqSub = new NetMQSubscriber<string>(p, TopicFromRemote, remoteIP, JsonFormat.Instance);
+                // nmqSub.Do(x => Console.WriteLine($"RunDemoWithRemoteMultipart: nmqSub received: {0}",x));
+                nmqSub.Do(x => Console.WriteLine($"RunDemoWithRemoteMultipart: nmqSub received: {x}"));
+
+                var nmqPub = new NetMQPublisher<string>(p, TopicToRemote, TcpIPPublisher, JsonFormat.Instance);
+
+                // var nmqPub = new NetMQWriter<string>(p, TopicToRemote, TcpIPPublisher, JsonFormat.Instance);
+                // nmqPub.publish_hellos<string>(); 
+                // nmqPub.Do(x => Console.WriteLine("RunDemoWithRemoteMultipart, nmqPub.Do: {0}", x));
+
+                nmqSub.PipeTo(nmqPub); 
+
+                p.Run();
+                // p.RunAsync();
+            }
+        }
+
+        // public static void getRemoteIP(NetMQResponder<string> nmpRep, Pipeline p) {
+        //     Console.WriteLine("Program.cs, getRemoteIP -- enter");
+        //     remoteIP = nmqRep.getRemoteIP(); 
+        //     if (remoteIP != null) {
+        //         p.Dispose(true); 
+        //     }
+        // }
 
                 // var video = store.OpenStream<Shared<EncodedImage>>("Image");
                 if (!AudioOnly && cameraType == "Kinect")
