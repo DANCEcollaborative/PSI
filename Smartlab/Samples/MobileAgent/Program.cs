@@ -75,7 +75,7 @@ namespace SigdialDemo
         private const double DistanceWarningCooldown = 30.0;
         private const double NVBGCooldownLocation = 8.0;
         private const double NVBGCooldownAudio = 3.0;
-        private static string AzureSubscriptionKey = "b6ba5313943f4393abaa37e28a45de51";
+        private static string AzureSubscriptionKey = "xxx";
         private static string AzureRegion = "eastus";
         public static readonly object SendToBazaarLock = new object();
         public static readonly object SendToPythonLock = new object();
