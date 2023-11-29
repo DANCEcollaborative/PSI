@@ -74,10 +74,12 @@ namespace SigdialDemo
         private const string TopicSendImagesToPython = "images-psi-to-python";
         private const string TopicSendCVPredsToPython = "cv-preds-psi-to-python";
         private const string TopicSendTTSInvToPython = "tts-inv-psi-to-python";
+        private const string TopicSendFeCodeToPython = "fe-code-psi-to-python";
         private const string TopicRespChatGPT = "chatgpt-responses";
 
         private const string TopicCVPreds = "cv-preds";
         private const string TopicTTSInvocations = "fe-tts";
+        private const string TopicFECode = "fe-code";
         private const string TopicImages = "images";
 
 
@@ -90,6 +92,7 @@ namespace SigdialDemo
         private const string TcpIPPublisherSendImages = "tcp://*:40004";
         private const string TcpIPPublisherSendCVPreds = "tcp://*:40005";
         private const string TcpIPPublisherSendTTSInv = "tcp://*:40006";
+        private const string TcpIPPublisherSendFeCode = "tcp://*:40007";
         
 
 
@@ -267,10 +270,18 @@ namespace SigdialDemo
                     p,
                     TopicTTSInvocations,
                     "tcp://127.0.0.1:41000",
-                    // ips.cvPreds,
                     MessagePackFormat.Instance);
 
                 ttsInvocations.Do(t=>{Console.WriteLine(t);});
+
+                var feCode = new NetMQSource<string>(
+                    p,
+                    TopicFECode,
+                    "tcp://127.0.0.1:41000",
+                    MessagePackFormat.Instance);
+
+                feCode.Do(t=>{Console.WriteLine("code " + t);});
+
                 chatGPTResponse.Do(t=>{
                     Console.WriteLine(t);
                 });
@@ -292,6 +303,9 @@ namespace SigdialDemo
 
                 var nmqSendTTSInvToPythonBE = new NetMQWriter<string>(p, TopicSendTTSInvToPython, TcpIPPublisherSendTTSInv, MessagePackFormat.Instance);
                 ttsInvocations.PipeTo(nmqSendTTSInvToPythonBE);
+
+                var nmqSendFeCodeToPythonBE = new NetMQWriter<string>(p, TopicSendFeCodeToPython, TcpIPPublisherSendFeCode, MessagePackFormat.Instance);
+                feCode.PipeTo(nmqSendFeCodeToPythonBE);
 
                 p.Run();
 
