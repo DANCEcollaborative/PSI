@@ -109,7 +109,7 @@ namespace CMU.Smartlab.Communication
         }
         private void InitActiveMQServer()
         {
-            this.factory = new NMSConnectionFactory(this.activeMQUri);
+            this.factory = new NMSConnectionFactory(this.activeMQUri); // "tcp://128.2.212.138:30002/tcp" // "tcp://128.2.212.138:61616/tcp" // this.activeMQUri
             try
             {
                 this.connection = this.factory.CreateConnection();

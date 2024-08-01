@@ -10,9 +10,9 @@
     <PackageReference Include="Newtonsoft.Json" Version="*" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="*" />
     <PackageReference Include="System.Drawing.Common" Version="5.0.0" />
-    <PackageReference Include="Apache.NMS.ActiveMQ" Version="*" />
+    <PackageReference Include="Apache.NMS.ActiveMQ" Version="2.0.0" />
     <PackageReference Include="NetMQ" Version="*" />
-    <PackageReference Include="Apache.NMS" Version="*" />
+    <PackageReference Include="Apache.NMS" Version="2.0.0" />
     <PackageReference Include="AsyncIO" Version="*" />
     <PackageReference Include="System.Buffers" Version="*" />
     <PackageReference Include="System.Memory" Version="*" />

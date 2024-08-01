@@ -85,7 +85,7 @@ namespace CMU.Smartlab.Communication
             // Console.WriteLine("AMQSubscriber.Start - InTopic:  '{0}'", this.inTopic);
             // Console.WriteLine("AMQSubscriber.Start - OutTopic: '{0}'", this.outTopic);
             // InitActiveMQServer();
-            this.factory = new NMSConnectionFactory(this.activeMQUri);
+            this.factory = new NMSConnectionFactory(this.activeMQUri); //"tcp://128.2.212.138:40000/tcp" // "tcp://128.2.212.138:61616/tcp" // this.activeMQUri
             try
             {
                 this.connection = this.factory.CreateConnection();
@@ -136,14 +136,14 @@ namespace CMU.Smartlab.Communication
 
         public void subscribe(string topic, Action<string> listener)
         {
-            // Console.WriteLine("AMQSubscriber: subscribe string -- topic: " + topic);
+            Console.WriteLine("140: AMQSubscriber: subscribe string -- topic: " + topic);
             IMessageConsumer consumer = this.GetConsumer(topic);
             consumer.Listener += new MessageListener((message) =>
             {
                 if (message is ITextMessage)
                 {
                     string text = ((ITextMessage)message).Text;
-                    // Console.WriteLine("AMQSubscriber: subscribe string -- topic: " + topic + "  textMessage: " + text);
+                    Console.WriteLine("140: AMQSubscriber: subscribe string -- topic: " + topic + "  textMessage: " + text);
                     listener.Invoke(text);
                 }
             });

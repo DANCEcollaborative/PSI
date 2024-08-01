@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Net;
+using System.Net.Sockets;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -44,12 +45,76 @@ using Newtonsoft.Json;
 
 namespace SigdialDemo
 {
+    public class NetworkAudioSource : ISourceComponent, IProducer<AudioBuffer>
+    {
+        private readonly Pipeline pipeline;
+        private readonly TcpListener server;
+        private readonly WaveFormat waveFormat;
+        private Task readTask;
+        private bool stopping = false;
+
+        public Emitter<AudioBuffer> Out { get; private set; }
+
+        public NetworkAudioSource(Pipeline pipeline, int port, WaveFormat waveFormat)
+        {
+            this.pipeline = pipeline;
+            this.waveFormat = waveFormat;
+            this.Out = pipeline.CreateEmitter<AudioBuffer>(this, "AudioOut");
+
+            this.server = new TcpListener(IPAddress.Any, port);
+            this.server.Start();
+            Console.WriteLine($"Server started. Listening on port {port}");
+        }
+
+        public void Start(Action<DateTime> notifyCompletionTime)
+        {
+            this.readTask = Task.Run(() => this.ReadNetworkStream());
+            notifyCompletionTime(DateTime.MaxValue);
+        }
+
+        public void Stop(DateTime finalOriginatingTime, Action notifyCompleted)
+        {
+            this.stopping = true;
+            this.server.Stop();
+            this.readTask.Wait();
+            notifyCompleted();
+        }
+
+        private async Task ReadNetworkStream()
+        {
+            while (!this.stopping)
+            {
+                Console.WriteLine("Waiting for a connection...");
+                using (var client = this.server.AcceptTcpClient())
+                {
+                    Console.WriteLine("Connected to client!");
+                    using (var networkStream = client.GetStream())
+                    {
+                        byte[] buffer = new byte[8192];
+                        while (!this.stopping)
+                        {
+                            int bytesRead = await networkStream.ReadAsync(buffer, 0, buffer.Length);
+                            if (bytesRead == 0) break;
+
+                            var audioBuffer = new AudioBuffer(new ArraySegment<byte>(buffer, 0, bytesRead).ToArray(), this.waveFormat);
+                            this.Out.Post(audioBuffer, this.pipeline.GetCurrentTime());
+                        }
+                    }
+                }
+            }
+        }
+    }
     public class sensorIPs
     {
         public string sensorAudio { get; set; }
         public string sensorDOA { get; set; }
         public string sensorVAD { get; set; }
         public string sensorVideoText { get; set; }
+    }
+    public class OuterMessage
+    {
+        public string message { get; set; }
+        public DateTime originatingTime { get; set; }
     }
     public class Program
     {
@@ -75,7 +140,7 @@ namespace SigdialDemo
         private const double DistanceWarningCooldown = 30.0;
         private const double NVBGCooldownLocation = 8.0;
         private const double NVBGCooldownAudio = 3.0;
-        private static string AzureSubscriptionKey = "xxx";
+        private static string AzureSubscriptionKey = "xxxx";
         private static string AzureRegion = "eastus";
         public static readonly object SendToBazaarLock = new object();
         public static readonly object SendToPythonLock = new object();
@@ -90,16 +155,16 @@ namespace SigdialDemo
         public static Dictionary<string, IdentityInfo> IdTail;
         public static List<String> AudioSourceList;
         public static CameraInfo VhtInfo;
-        // public static String sensorVideoText = "tcp://128.2.212.138:40000";     // Nano
+        public static String sensorVideoText = "tcp://128.2.212.138:40000";     // Nano
         // public static String sensorVideoText = "tcp://128.2.220.118:40003";     // erebor
-        public static String sensorVideoText; 
-        public static String sensorAudio; 
-        public static String sensorDOA; 
-        public static String sensorVAD; 
+        // public static String sensorVideoText; 
+        // public static String sensorAudio; 
+        // public static String sensorDOA; 
+        // public static String sensorVAD; 
 
-        // public static String sensorAudio = "tcp://128.2.212.138:40001"; 
-        // public static String sensorDOA = "tcp://128.2.212.138:40002"; 
-        // public static String sensorVAD = "tcp://128.2.212.138:40003"; 
+        public static String sensorAudio = "tcp://128.2.212.138:40001"; 
+        public static String sensorDOA = "tcp://128.2.212.138:40002"; 
+        public static String sensorVAD = "tcp://128.2.212.138:40003"; 
 
         public static void Main(string[] args)
         {
@@ -174,17 +239,80 @@ namespace SigdialDemo
                 Console.WriteLine("RunDemo, responseSocket received '{0}'", message);
                 responseSocket.SendFrame(message);
                 // sensorVideoText = message; 
-                IPs = JsonConvert.DeserializeObject<sensorIPs>(message);
+
+                // Step 1: Deserialize the outer message
+                OuterMessage outerMessage = JsonConvert.DeserializeObject<OuterMessage>(message);
+
+                if (outerMessage != null)
+                {
+                    // Step 2: Extract the inner JSON string
+                    string innerJson = outerMessage.message;
+
+                    // Step 3: Deserialize the inner JSON string into the sensorIPs object
+                    IPs = JsonConvert.DeserializeObject<sensorIPs>(innerJson);
+
+                    if (IPs != null)
+                    {
+                        // Successfully deserialized sensorIPs
+                        Console.WriteLine($"sensorVideoText: {IPs.sensorVideoText}");
+                        Console.WriteLine($"sensorAudio: {IPs.sensorAudio}");
+                        Console.WriteLine($"sensorDOA: {IPs.sensorDOA}");
+                        Console.WriteLine($"sensorVAD: {IPs.sensorVAD}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failed to deserialize inner JSON into sensorIPs.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Failed to deserialize outer message.");
+                }
+
+                // IPs = JsonConvert.DeserializeObject<sensorIPs>(message);
                 sensorVideoText = IPs.sensorVideoText;
                 sensorAudio = IPs.sensorAudio;
                 sensorDOA = IPs.sensorDOA;
                 sensorVAD = IPs.sensorVAD;
                 Console.WriteLine("RunDemo: sensorVideoText = '{0}'", sensorVideoText);
                 Console.WriteLine("RunDemo: sensorAudio = '{0}'", sensorAudio);
+
+                if (IPs == null || string.IsNullOrEmpty(IPs.sensorVideoText) || string.IsNullOrEmpty(IPs.sensorAudio) || string.IsNullOrEmpty(IPs.sensorDOA) || string.IsNullOrEmpty(IPs.sensorVAD))
+                {
+                    Console.WriteLine("NetMQ IP Problem!!!! line 181!");
+                    Console.WriteLine("IPs Content: {IPs}");
+                    Console.WriteLine($"Sensor Video Text Address: {sensorVideoText}");
+                    Console.WriteLine($"Sensor Audio Address: {sensorAudio}");
+                    Console.WriteLine($"Sensor DOA Address: {sensorDOA}");
+                    Console.WriteLine($"Sensor VAD Address: {sensorVAD}");
+                    // throw new Exception("Invalid sensor IP addresses received.");
+                }
+
             }
             Thread.Sleep(1000);
 
+            if (string.IsNullOrEmpty(sensorVideoText))
+            {
+                // // Read audio from local file
+                // var audioFilePath = "/usr0/home/jiaxins1/test.wav";
+                // var audioData = File.ReadAllBytes(audioFilePath);
+                // // Split the audio data into smaller chunks
+                // var chunkSize = 16000; // Change the chunk size if necessary
+                // var audioChunks = new List<byte[]>();
+                // for (int i = 0; i < audioData.Length; i += chunkSize)
+                // {
+                //     var chunk = new byte[Math.Min(chunkSize, audioData.Length - i)];
+                //     Array.Copy(audioData, i, chunk, 0, chunk.Length);
+                //     audioChunks.Add(chunk);
+                // }
 
+                // // Create a generator to simulate audio input
+                // var audioSource = Generators.Sequence(p, audioChunks, TimeSpan.FromMilliseconds(100));
+
+                // var audioInAudioBuffer = audioSource.Select(data => new AudioBuffer(data, format));
+
+                throw new Exception("sensorVideoText address is null or empty.");
+            }
             using (var p = Pipeline.Create())
             {
                 // Subscribe to messages from remote sensor using NetMQ (ZeroMQ)
@@ -215,64 +343,97 @@ namespace SigdialDemo
 
                 // ======================================================================================
                 // vvv AUDIO SETUP vvv
-                var format = WaveFormat.Create16BitPcm(16000, 1);
+                // var format = WaveFormat.Create16BitPcm(16000, 1);
 
-                // binary data stream
-                var audioFromNano = new NetMQSource<byte[]>(
-                    p,
-                    "temp",
-                    // ips.sensorAudio,  // TEMPORARY
-                    sensorAudio,          // TEMPORARY
-                    MessagePackFormat.Instance);
+                // // binary data stream
+                // var audioFromNano = new NetMQSource<byte[]>(
+                //     p,
+                //     "temp",
+                //     // ips.sensorAudio,  // TEMPORARY
+                //     sensorAudio,          // TEMPORARY
+                //     MessagePackFormat.Instance);
+               
+                // // make sure we receive data
+                // audioFromNano.Do(data =>
+                // {
+                //     Console.WriteLine($"Received audio data of length: {data.Length}");
+                // });
 
-                // sensorDOA - Direction of Arrival (of sound, int values range from 0 to 360)
-                var sensorDOAFromNano = new NetMQSource<int>(
-                    p,
-                    "temp2",
-                    // ips.sensorDOA,         // TEMPORARY
-                    sensorDOA,             // TEMPORARY
-                    MessagePackFormat.Instance);
+                // // sensorDOA - Direction of Arrival (of sound, int values range from 0 to 360)
+                // var sensorDOAFromNano = new NetMQSource<int>(
+                //     p,
+                //     "temp2",
+                //     // ips.sensorDOA,         // TEMPORARY
+                //     sensorDOA,             // TEMPORARY
+                //     MessagePackFormat.Instance);
 
-                var vadFromNano = new NetMQSource<int>(
-                    p,
-                    "temp3",
-                    // ips.vad,         // TEMPORARY
-                    sensorVAD,                // TEMPORARY
-                    MessagePackFormat.Instance);
+                // var vadFromNano = new NetMQSource<int>(
+                //     p,
+                //     "temp3",
+                //     // ips.vad,         // TEMPORARY
+                //     sensorVAD,                // TEMPORARY
+                //     MessagePackFormat.Instance);
 
-                // processing audio and sensorDOA input, and saving to file
-                // audioFromNano contains binary array data, needs to be converted to PSI compatible AudioBuffer format
-                var audioInAudioBuffer = audioFromNano
-                    .Select(t =>
-                    {
-                        var ab = new AudioBuffer(t, format);
-                        return ab;
-                    });
+                // // processing audio and sensorDOA input, and saving to file
+                // // audioFromNano contains binary array data, needs to be converted to PSI compatible AudioBuffer format
+                // var audioInAudioBuffer = audioFromNano
+                //     .Select(t =>
+                //     {
+                //         var ab = new AudioBuffer(t, format);
+                //         Console.WriteLine($"Audio buffer created with length: {ab.Length}");
+                //         return ab;
+                //     });
+                IProducer<AudioBuffer> audioInAudioBuffer = new NetworkAudioSource(p, 40001, WaveFormat.Create16BitPcm(16000, 1));
 
-                // saving to audio file
-                // var saveToWavFile = new WaveFileWriter(p, "./psi_direct_audio_05-14-a.wav");
-                // audioInAudioBuffer.PipeTo(saveToWavFile);  
+
 
                 // vvvvvvvvvvvv From psi-samples SimpleVoiceActivityDetector vvvvvvvvvvvvvv
 
                 // To run from a stored audio file
                 //    -- Comment out the 'audioInAudioBuffer' declaration above
                 //    -- Uncomment the two lines below and customize the file name at the end of the first line
-                // var inputStore = PsiStore.Open(p, "psi_direct_audio_0.wav", Path.Combine(Directory.GetCurrentDirectory(), "Stores"));
-                // audioInAudioBuffer = inputStore.OpenStream<AudioBuffer>("Audio");  // replaced microphone with audioInAudioBuffer
+                // var inputStore = PsiStore.Open(p, "test.wav", Path.Combine(Directory.GetCurrentDirectory(), "/usr0/home/jiaxins1/"));
+                // var audioInAudioBuffer = inputStore.OpenStream<AudioBuffer>("Audio");  // replaced microphone with audioInAudioBuffer
 
+                // vvvvvvvvvvvv
+                // Read audio from local file
+                // var audioFilePath = "/usr0/home/jiaxins1/test.wav";
+                // var audioData = File.ReadAllBytes(audioFilePath);
+                // // Split the audio data into smaller chunks
+                // var chunkSize = 16000; // Change the chunk size if necessary
+                // var audioChunks = new List<byte[]>();
+                // for (int i = 0; i < audioData.Length; i += chunkSize)
+                // {
+                //     var chunk = new byte[Math.Min(chunkSize, audioData.Length - i)];
+                //     Array.Copy(audioData, i, chunk, 0, chunk.Length);
+                //     audioChunks.Add(chunk);
+                // }
+
+                // // Create a generator to simulate audio input
+                // var audioSource = Generators.Sequence(p, audioChunks, TimeSpan.FromMilliseconds(100));
+
+                // var audioInAudioBuffer = audioSource.Select(data => new AudioBuffer(data, format));
+                
+                //   ^^^^^^^^ 
+                // saving to audio file
+                var saveToWavFile = new WaveFileWriter(p, $"/usr0/home/jiaxins1/psi_direct_audio.wav");
+                audioInAudioBuffer.PipeTo(saveToWavFile);  
+                Console.WriteLine($"Saved audio buffer.");
+                
                 var acousticFeaturesExtractor = new AcousticFeaturesExtractor(p);
                 audioInAudioBuffer.PipeTo(acousticFeaturesExtractor);  // replaced microphone with audioInAudioBuffer
 
-                // Display the log energy
+                // // Display the log energy
                 // acousticFeaturesExtractor.LogEnergy
                 //     .Sample(TimeSpan.FromSeconds(0.2))
-                //     .Do(logEnergy => Console.Write($"LogEnergy = {logEnergy}"));
-                    // .Do(logEnergy => Console.WriteLine($"LogEnergy = {logEnergy}"));
+                //     .Do(logEnergy => Console.WriteLine($"LogEnergy = {logEnergy}"));
 
                 // Create a voice-activity stream by thresholding the log energy
                 var vad = acousticFeaturesExtractor.LogEnergy
                     .Select(l => l > 10);
+                // Print VAD results
+                // var output = vad.Out.Do(speech => Console.WriteLine(speech ? "Speech" : "Silence"));
+
                 
                 // Create filtered signal by aggregating over historical buffers
                 var vadWithHistory = acousticFeaturesExtractor.LogEnergy
@@ -294,22 +455,34 @@ namespace SigdialDemo
                 // VAD [0, 0, 1, 1, 1, 1,................, 0, 0] (same length as above)
                 var annotatedAudio = audioInAudioBuffer.Join(vadWithHistory, TimeSpan.FromMilliseconds(100)).Select(x =>
                 {
+                    // Console.WriteLine("annotatedAudio");
                     return (x.Item1, x.Item2);
                 });
-
+                // annotatedAudio.Do(x => Console.WriteLine("annotatedAudio: " + x.Item1.Length + ", " + x.Item2.ToString()));
+                
                 var recognizer = new AzureSpeechRecognizer(p, new AzureSpeechRecognizerConfiguration()
                 {
                     SubscriptionKey = Program.AzureSubscriptionKey,
                     Region = Program.AzureRegion
                 });
+                Console.WriteLine("set up recognizer done.");
 
                 // To CHECK: 
                 // What is being sent to Azure? Answer: Only audio for which voice activity detection (vad) == true
                 // What are we being charged for: the time the ASR system is running or the audio duration being sent?
                 annotatedAudio.PipeTo(recognizer);
+                // 
+                
+                // Print partial recognition results - use the Do operator to print
+                // var partial = recognizer.PartialRecognitionResults
+                //     .Do(partial => Console.WriteLine("partial: " + partial.Text.ToString()));
 
-                // Text transcription from Azure
-                var finalResults = recognizer.Out.Where(result => result.IsFinal);
+                // // Print final recognition results
+                var finalResults = recognizer.Out
+                    .Do(final => Console.WriteLine(final.Text.ToString()));
+
+                // // Text transcription from Azure
+                // var finalResults = recognizer.Out.Where(result => result.IsFinal);
 
                 recognizer.Select(result => "audio:" + result.Text).PipeTo(amqPubSensorToBazaar.StringIn);
 
@@ -320,6 +493,7 @@ namespace SigdialDemo
                         Console.WriteLine($"Sending text to Bazaar -- audio:{text}");
                     }
                 });
+                
                 // ^^^ AUDIO SETUP ^^^
                 // ======================================================================================
 
