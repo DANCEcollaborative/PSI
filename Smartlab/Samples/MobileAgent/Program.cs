@@ -383,7 +383,8 @@ namespace SigdialDemo
                 //         Console.WriteLine($"Audio buffer created with length: {ab.Length}");
                 //         return ab;
                 //     });
-                IProducer<AudioBuffer> audioInAudioBuffer = new NetworkAudioSource(p, 40001, WaveFormat.Create16BitPcm(16000, 1));
+                // IProducer<AudioBuffer> audioInAudioBuffer = new NetworkAudioSource(p, 40001, WaveFormat.Create16BitPcm(16000, 1)); //  WaveFormat.Create16kHz1Channel16BitPcm()); 
+                IProducer<AudioBuffer> audioInAudioBuffer = new NetworkAudioSource(p, 40001, WaveFormat.Create16kHz1Channel16BitPcm()); 
 
 
 
