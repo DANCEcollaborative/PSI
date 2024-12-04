@@ -294,7 +294,7 @@ namespace SigdialDemo
             if (string.IsNullOrEmpty(sensorVideoText))
             {
                 // // Read audio from local file
-                // var audioFilePath = "/usr0/home/jiaxins1/test.wav";
+                // var audioFilePath = "/usr0/home/rcmurray/test.wav";
                 // var audioData = File.ReadAllBytes(audioFilePath);
                 // // Split the audio data into smaller chunks
                 // var chunkSize = 16000; // Change the chunk size if necessary
@@ -393,12 +393,12 @@ namespace SigdialDemo
                 // To run from a stored audio file
                 //    -- Comment out the 'audioInAudioBuffer' declaration above
                 //    -- Uncomment the two lines below and customize the file name at the end of the first line
-                // var inputStore = PsiStore.Open(p, "test.wav", Path.Combine(Directory.GetCurrentDirectory(), "/usr0/home/jiaxins1/"));
+                // var inputStore = PsiStore.Open(p, "test.wav", Path.Combine(Directory.GetCurrentDirectory(), "/usr0/home/rcmurray/"));
                 // var audioInAudioBuffer = inputStore.OpenStream<AudioBuffer>("Audio");  // replaced microphone with audioInAudioBuffer
 
                 // vvvvvvvvvvvv
                 // Read audio from local file
-                // var audioFilePath = "/usr0/home/jiaxins1/test.wav";
+                // var audioFilePath = "/usr0/home/rcmurray/test.wav";
                 // var audioData = File.ReadAllBytes(audioFilePath);
                 // // Split the audio data into smaller chunks
                 // var chunkSize = 16000; // Change the chunk size if necessary
@@ -417,7 +417,7 @@ namespace SigdialDemo
                 
                 //   ^^^^^^^^ 
                 // saving to audio file
-                var saveToWavFile = new WaveFileWriter(p, $"/usr0/home/jiaxins1/psi_direct_audio.wav");
+                var saveToWavFile = new WaveFileWriter(p, $"/usr0/home/rcmurray/psi_direct_audio.wav");
                 audioInAudioBuffer.PipeTo(saveToWavFile);  
                 Console.WriteLine($"Saved audio buffer.");
                 
