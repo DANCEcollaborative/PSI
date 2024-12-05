@@ -31,6 +31,9 @@ using Microsoft.Psi.Speech;
 using Microsoft.Psi.Interop.Format;
 using Microsoft.Psi.Interop.Transport;
 // using Microsoft.Psi.Kinect;
+
+using Microsoft.CognitiveServices.Speech;
+
 using Apache.NMS;
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Transport.Discovery;
@@ -140,7 +143,7 @@ namespace SigdialDemo
         private const double DistanceWarningCooldown = 30.0;
         private const double NVBGCooldownLocation = 8.0;
         private const double NVBGCooldownAudio = 3.0;
-        private static string AzureSubscriptionKey = "xxxx";
+        private static string AzureSubscriptionKey = "####";
         private static string AzureRegion = "eastus";
         public static readonly object SendToBazaarLock = new object();
         public static readonly object SendToPythonLock = new object();
@@ -461,12 +464,19 @@ namespace SigdialDemo
                 });
                 // annotatedAudio.Do(x => Console.WriteLine("annotatedAudio: " + x.Item1.Length + ", " + x.Item2.ToString()));
                 
+
+
                 var recognizer = new AzureSpeechRecognizer(p, new AzureSpeechRecognizerConfiguration()
                 {
                     SubscriptionKey = Program.AzureSubscriptionKey,
                     Region = Program.AzureRegion
                 });
                 Console.WriteLine("set up recognizer done.");
+
+                // ######################### ATTEMPT FROM HELLOWORLD ########################
+                // var config = SpeechTranslationConfig.FromSubscription(Program.AzureSubscriptionKey, Program.AzureRegion);
+                // var recognizer = new SpeechRecognizer(config);
+                // ######################### ATTEMPT FROM HELLOWORLD ########################
 
                 // To CHECK: 
                 // What is being sent to Azure? Answer: Only audio for which voice activity detection (vad) == true
